@@ -1,0 +1,4 @@
+/home/etienne/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/202.7319.72/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -I/usr/include/python3.8 -lpython3.8 -G "CodeBlocks - Unix Makefiles" /home/etienne/CLionProjects/MCSampling
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/etienne/CLionProjects/MCSampling/cmake-build-debug
