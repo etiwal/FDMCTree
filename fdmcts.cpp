@@ -3,51 +3,59 @@
 //
 
 #include "fdmcts.h"
+
 #include <iostream>
+#include <random>
+#include <ctime>
 
-MCTree::MCTree(size_t horizon, size_t samples, size_t state_dim, size_t input_dim){
-	MCTree::init_data();
-};
 
-void MCTree::init_data(){};
+// Node object
+//Node::Node(double state, double control_input, int step, int expert_type, size_t n, size_t parent) {
+//	state_ = state;
+//	control_input_ = control_input;
+//	step_ = step;
+//	expert_type_ = expert_type;
+//	n_ = n;
+//	parent_ = parent;
+//
+//	// call function to calc cost based on state
+//	cost_ = get_cost(state_);
+//}
 
-void MCTree::gen_child(){
-	std::cout << "generating a child";
+Node::Node(double state, int step, int expert_type, size_t n, size_t parent) {
+	state_ = state;
+	step_ = step;
+	expert_type_ = expert_type;
+	n_ = n;
+	parent_ = parent;
+	control_input_ = 0;
+
+	// call function to calc cost based on state
+	cost_ = get_cost(state_);
+
+	// based on the state and on the expert type a control input is sampled
+//	control_input_ = get_random_uniform_double(-5, 5);
+}
+
+void Node::set_control_input(double state, int expert_type) {
+	control_input_ = get_random_uniform_double(-10, 10);
 }
 
 
-
-
-
-
-
-// Node struct/class
-
-Node::Node(double state, double control_input, int step, int expert_type, double cost) {
-	double state_ = state;
-	double control_input_ = control_input;
-	int step_ = step;
-	int expert_type_ = expert_type;
-	double cost_ = cost;
+// Sys object
+Sys::Sys(double init_state) {
+	state_ = init_state;
 }
 
-Node::Node(double state, int step, int expert_type, double cost) {
-	double state_ = state;
-	double control_input_ = 0;
-	int step_ = step;
-	int expert_type_ = expert_type;
-	double cost_ = cost;
+void Sys::apply_control_input(double control_input) {
+	state_ += control_input;
 }
 
-void Node::set_control_input(double control_input) {
-	control_input_ = control_input;
-}
-
-double Node::get_state() {
+double Sys::get_state() {
 	return state_;
 }
 
 
-
+// Sim object
 
 

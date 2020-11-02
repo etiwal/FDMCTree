@@ -4,22 +4,36 @@
 #include <iostream>
 #include <cstdlib>
 #include <vector>
+#include <random>
+
+#include "functions.h"
 
 
-std::vector<std::vector<double>> sample_trajectory(int dimensions, int horizon){
-    std::vector<std::vector<double>> i;
-    i.resize(horizon, std::vector<double>(dimensions, 0));
-    for (int dimension = 0; dimension < dimensions; ++dimension) {
-        for (int step = 0; step < horizon; ++step) {
-            if (step >= 1){
-                i[step][dimension] = i[step-1][dimension] + ((double) random() / (RAND_MAX));
-            }
-            else {
-                i[step][dimension] = ((double) random() / (RAND_MAX));
-            }
-        }
-    }
+double get_cost(double state){
+	double ref = 100;
+	double cost = std::abs(ref - state);
 
-    return i;
+	return cost;
 }
 
+double get_random_uniform_double(double minV, double maxV){
+	std::default_random_engine::result_type seed = 0;
+	static std::default_random_engine e(seed);
+	std::uniform_real_distribution<double> u(minV, maxV);
+	return u(e);
+}
+
+unsigned get_random_uniform_unsigned(unsigned minV, unsigned maxV){
+	std::default_random_engine::result_type seed = 0;
+	static std::default_random_engine e(seed);
+	std::uniform_int_distribution<unsigned> u(minV, maxV);
+	return u(e);
+}
+
+double sim_system(double state, double control_input, double timesteps){
+	return (state + (control_input * timesteps));
+}
+
+//void print_tree(tree<Node> tree_input){
+//
+//};
