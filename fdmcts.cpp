@@ -22,20 +22,20 @@
 //	cost_ = get_cost(state_);
 //}
 
-Node::Node(double state, int step, int expert_type, size_t n) {
+Node::Node(std::vector<double> state, int step, int expert_type, size_t n) {
 	state_ = state;
 	step_ = step;
 	expert_type_ = expert_type;
 	n_ = n;
-	control_input_ = 0;
+	control_input_ = {0, 0};
 
 	// call function to calc cost based on state
 	cost_ = get_cost(state_);
 
 }
 
-void Node::set_control_input(double state, int expert_type) {
-	control_input_ = get_random_uniform_double(-10, 10);
+void Node::sample_control_input(std::vector<double> state, int expert_type) {
+	control_input_ = {get_random_uniform_double(-1, 1), get_random_uniform_double(-1, 1)};
 }
 
 
@@ -44,9 +44,9 @@ Sys::Sys(std::vector<double> &init_state) {
 	state_ = init_state;
 }
 
-void Sys::apply_control_input(const std::vector<double>& control_input){
+void Sys::apply_control_input(const std::vector<double>& control_input, int timesteps){
 	//TODO: fix this!
-	state_ += control_input;
+	state_ = sim_system(state_, control_input, timesteps);
 }
 
 std::vector<double> Sys::get_state(){

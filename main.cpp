@@ -9,10 +9,10 @@
 //namespace plt = matplotlibcpp;
 
 int main(){
-    int horizon = 5;
-    int n_rollouts = 6;
+    int horizon = 10;
+    int n_rollouts = 100;
 
-	std::vector<double> initial_state = {0, 0, 0};
+	std::vector<double> initial_state = {0, 0, 0, 0, 0, 0};
 
     Sys Robot(initial_state);
 
@@ -25,7 +25,7 @@ int main(){
 		std::cout << std::endl;
 		std::cout << "------------------------------------------------------------------------" << std::endl;
 		std::cout << "Simulation time: " << time << std::endl;
-		std::cout << "Robot is at position: " << Robot.get_state() << std::endl;
+		std::cout << "Robot is at position: " << Robot.get_state()[0] << ", " << Robot.get_state()[1] << std::endl;
 		std::cout << "Target is at position: " << 100 << std::endl;
 
 
@@ -63,7 +63,7 @@ int main(){
 				auto active_rollout = leaf_handles[rollout];
 				std::cout << "cost of active rollout is " << active_rollout->cost_ << std::endl;
 
-				if (active_rollout->cost_ <= 1.2 * min_cost) {
+				if (active_rollout->cost_ <= 1.05 * min_cost) {
 					leaf_handles_extending.push_back(active_rollout);
 				}
 //			else {
@@ -80,9 +80,9 @@ int main(){
 					leaf_handles_extending.end()) {
 					std::cout << "active_rollout will be directly extended" << std::endl;
 					// based on the state and the control input the system is propagated
-					active_rollout->set_control_input(active_rollout->state_, active_rollout->expert_type_);
+					active_rollout->sample_control_input(active_rollout->state_, active_rollout->expert_type_);
 
-					double next_state = sim_system(active_rollout->state_, active_rollout->control_input_, 1);
+					std::vector<double> next_state = sim_system(active_rollout->state_, active_rollout->control_input_, 1);
 					leaf_handles[rollout] = sampling_tree.append_child(active_rollout,
 																	   Node(next_state, step, active_rollout->expert_type_,
 																			rollout));
@@ -92,10 +92,10 @@ int main(){
 					std::cout << "active_rollout will be extended on leaf " << random_unsigned << std::endl;
 					auto extending_leaf = leaf_handles_extending[random_unsigned];
 
-					active_rollout->set_control_input(extending_leaf->state_, active_rollout->expert_type_);
+					active_rollout->sample_control_input(extending_leaf->state_, active_rollout->expert_type_);
 
 					// based on the state and the control input the system is propagated
-					double next_state = sim_system(extending_leaf->state_, active_rollout->control_input_, 1);
+					std::vector<double> next_state = sim_system(extending_leaf->state_, active_rollout->control_input_, 1);
 					leaf_handles[rollout] = sampling_tree.append_child(extending_leaf,
 																	   Node(next_state, step, active_rollout->expert_type_,
 																			rollout));
@@ -109,8 +109,8 @@ int main(){
 		// print tree
 		std::cout << std::endl;
 
-		tree<Node>::iterator start_node = sampling_tree.begin(sampling_tree.begin());
-		tree<Node>::iterator end_node = sampling_tree.end(sampling_tree.end());
+		tree<Node>::iterator start_node = sampling_tree.begin();
+		tree<Node>::iterator end_node = sampling_tree.end();
 
 		while (start_node != end_node) {
 			int node_depth = sampling_tree.depth(start_node);
@@ -123,7 +123,7 @@ int main(){
 				}
 			}
 
-			std::cout << "state: " << std::round(start_node->state_) << ", cost: " << std::round(start_node->cost_) << std::endl;
+			std::cout << "state: (" << std::round(start_node->state_[0]) << ", " << std::round(start_node->state_[1]) << ") cost: " << std::round(start_node->cost_) << std::endl;
 
 			start_node++;
 		}
@@ -145,9 +145,9 @@ int main(){
 
 		std::cout << std::endl;
 		std::cout << "Winning rollout has final state cost: " << best_leaf_handle->cost_ << std::endl;
-		std::cout << "Control input " << best_root_handle->control_input_ << " is applied to Robot" << std::endl;
-		Robot.apply_control_input(best_root_handle->control_input_);
-		std::cout << "Robot moved to position " << Robot.get_state() << std::endl;
+		std::cout << "Control input " << best_root_handle->control_input_[0] << ", " << best_root_handle->control_input_[1] <<" is applied to Robot" << std::endl;
+		Robot.apply_control_input(best_root_handle->control_input_, 1);
+		std::cout << "Robot moved to position " << Robot.get_state()[0] << ", " << Robot.get_state()[1] << std::endl;
 	}
 
 

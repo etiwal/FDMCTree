@@ -17,18 +17,18 @@
 struct Node{
 public:
 //	Node(double state, double control_input, int step, int expert_type, size_t n, size_t parent);
-	Node(double state, int step, int expert_type, size_t n);
+	Node(std::vector<double> state, int step, int expert_type, size_t n);
 	Node() = default;
 	~Node() = default;
 
-	double state_;
-	double control_input_;
+	std::vector<double> state_;
+	std::vector<double> control_input_;
 	int step_;
 	int expert_type_;
 	size_t n_;
 	double cost_;
 
-	void set_control_input(double state, int expert_type);
+	void sample_control_input(std::vector<double> state, int expert_type);
 
 };
 
@@ -44,7 +44,7 @@ public:
 
 	static int get_control_dim();
 
-	void apply_control_input(const std::vector<double>& control_input);
+	void apply_control_input(const std::vector<double>& control_input, int timesteps);
 
 	std::vector<double> get_state();
 };
