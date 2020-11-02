@@ -40,17 +40,26 @@ void Node::set_control_input(double state, int expert_type) {
 
 
 // Sys object
-Sys::Sys(double init_state) {
+Sys::Sys(std::vector<double> &init_state) {
 	state_ = init_state;
 }
 
-void Sys::apply_control_input(double control_input) {
+void Sys::apply_control_input(const std::vector<double>& control_input){
+	//TODO: fix this!
 	state_ += control_input;
 }
 
-double Sys::get_state() {
+std::vector<double> Sys::get_state(){
 	return state_;
 }
+
+int Sys::get_state_dim(){
+	return 6;
+};
+
+int Sys::get_control_dim(){
+	return 2;
+};
 
 
 // Sim object

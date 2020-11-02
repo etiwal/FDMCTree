@@ -9,17 +9,14 @@
 //namespace plt = matplotlibcpp;
 
 int main(){
-
-    int state_dimensions = 1;
-    int control_dimensions = 1;
     int horizon = 5;
-    int n_rollouts = 4;
+    int n_rollouts = 6;
 
-	double initial_state = 0;
+	std::vector<double> initial_state = {0, 0, 0};
 
     Sys Robot(initial_state);
 
-	for (int time = 0; time < 10; ++time) {
+	for (int time = 0; time < 50; ++time) {
 		// generate rollouts
 		// init tree and root
 		tree<Node> sampling_tree;

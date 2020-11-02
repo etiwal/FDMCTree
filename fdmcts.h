@@ -34,13 +34,17 @@ public:
 
 struct Sys{
 public:
-	Sys(double init_state);
+	explicit Sys(std::vector<double> &init_state);
 	Sys() = default;
 	~Sys() = default;
 
-	double state_;
+	std::vector<double> state_;
 
-	void apply_control_input(double control_input);
+	static int get_state_dim();
 
-	double get_state();
+	static int get_control_dim();
+
+	void apply_control_input(const std::vector<double>& control_input);
+
+	std::vector<double> get_state();
 };
