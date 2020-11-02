@@ -1,1 +1,0 @@
-/usr/bin/c++  -g   CMakeFiles/MCSampling.dir/main.cpp.o CMakeFiles/MCSampling.dir/functions.cpp.o CMakeFiles/MCSampling.dir/fdmcts.cpp.o  -o MCSampling  /usr/lib/x86_64-linux-gnu/libpython3.8.so 
