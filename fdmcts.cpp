@@ -22,19 +22,16 @@
 //	cost_ = get_cost(state_);
 //}
 
-Node::Node(double state, int step, int expert_type, size_t n, size_t parent) {
+Node::Node(double state, int step, int expert_type, size_t n) {
 	state_ = state;
 	step_ = step;
 	expert_type_ = expert_type;
 	n_ = n;
-	parent_ = parent;
 	control_input_ = 0;
 
 	// call function to calc cost based on state
 	cost_ = get_cost(state_);
 
-	// based on the state and on the expert type a control input is sampled
-//	control_input_ = get_random_uniform_double(-5, 5);
 }
 
 void Node::set_control_input(double state, int expert_type) {

@@ -17,7 +17,7 @@
 struct Node{
 public:
 //	Node(double state, double control_input, int step, int expert_type, size_t n, size_t parent);
-	Node(double state, int step, int expert_type, size_t n, size_t parent);
+	Node(double state, int step, int expert_type, size_t n);
 	Node() = default;
 	~Node() = default;
 
@@ -27,11 +27,8 @@ public:
 	int expert_type_;
 	size_t n_;
 	double cost_;
-	double parent_;
 
 	void set_control_input(double state, int expert_type);
-
-	double get_state();
 
 };
 

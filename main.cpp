@@ -19,7 +19,7 @@ int main(){
 
     Sys Robot(initial_state);
 
-	for (int time = 0; time < 100; ++time) {
+	for (int time = 0; time < 10; ++time) {
 		// generate rollouts
 		// init tree and root
 		tree<Node> sampling_tree;
@@ -33,14 +33,14 @@ int main(){
 
 
 		// create root of tree
-		auto root = sampling_tree.insert(sampling_tree.begin(), Node(Robot.get_state(), 0, 0, 0, 0));
+		auto root = sampling_tree.insert(sampling_tree.begin(), Node(Robot.get_state(), 0, 0, 0));
 
 		std::cout << std::endl;
 		std::cout << "initializing nodes and an array with leaf iterator objects" << std::endl;
 		std::vector<tree<Node>::iterator> leaf_handles(n_rollouts);
 
 		for (int rollout = 0; rollout < n_rollouts; ++rollout) {
-			auto init_node = sampling_tree.append_child(root, Node(Robot.get_state(), 0, 0, rollout, 0));
+			auto init_node = sampling_tree.append_child(root, Node(Robot.get_state(), 0, 0, rollout));
 			leaf_handles[rollout] = init_node;
 		}
 
@@ -88,7 +88,7 @@ int main(){
 					double next_state = sim_system(active_rollout->state_, active_rollout->control_input_, 1);
 					leaf_handles[rollout] = sampling_tree.append_child(active_rollout,
 																	   Node(next_state, step, active_rollout->expert_type_,
-																			rollout, active_rollout->n_));
+																			rollout));
 				} else {
 					unsigned random_unsigned = get_random_uniform_unsigned(0, leaf_handles_extending.size()-1);
 
@@ -101,7 +101,7 @@ int main(){
 					double next_state = sim_system(extending_leaf->state_, active_rollout->control_input_, 1);
 					leaf_handles[rollout] = sampling_tree.append_child(extending_leaf,
 																	   Node(next_state, step, active_rollout->expert_type_,
-																			rollout, extending_leaf->n_));
+																			rollout));
 
 				}
 
@@ -120,9 +120,9 @@ int main(){
 
 			for (int i = 0; i < node_depth-1; ++i) {
 				if (i==node_depth-2){
-					std::cout << "|- ";
+					std::cout << "+- ";
 				} else {
-					std::cout << "   ";
+					std::cout << "|  ";
 				}
 			}
 
