@@ -2,6 +2,7 @@
 #include "functions.h"
 #include "fdmcts.h"
 #include "tree.h"
+#include "logger.h"
 
 //#include "matplotlibcpp.h"
 //#include <cmath>
@@ -9,24 +10,41 @@
 //namespace plt = matplotlibcpp;
 
 int main(){
-    int horizon = 10;
-    int n_rollouts = 100;
+
+	Logger sim_log { "sim_log.txt" };
+	sim_log.write("simstep", "state_0", "state_1", "state_2", "state_3", "state_4", "state_5");
+	sim_log.write_endl();
+
+	Logger sampling_log { "sampling_log.txt" };
+	sampling_log.write("simstep", "step","rollout","state_0", "state_1", "state_2", "state_3", "state_4", "state_5", "cost_cum");
+	sampling_log.write_endl();
+
+	//YAML::Node ConfigNode = YAML::LoadFile("./config.yaml");
+
+    int horizon = config::horizon;//ConfigNode["solver"]["horizon"].as<int>();
+    int n_rollouts = config::rollouts;//ConfigNode["solver"]["rollouts"].as<int>();
 
 	std::vector<double> initial_state = {0, 0, 0, 0, 0, 0};
 
     Sys Robot(initial_state);
 
-	for (int time = 0; time < 50; ++time) {
+	for (int time = 0; time < config::sim_time; ++time) {
 		// generate rollouts
 		// init tree and root
+
+		if (time==0){
+			sim_log.write(time, Robot.get_state()[0], Robot.get_state()[1], Robot.get_state()[2], Robot.get_state()[3], Robot.get_state()[4], Robot.get_state()[5]);
+			sim_log.write_endl();
+		}
+
 		tree<Node> sampling_tree;
 
 		// init all initial nodes as roots
 		std::cout << std::endl;
 		std::cout << "------------------------------------------------------------------------" << std::endl;
 		std::cout << "Simulation time: " << time << std::endl;
-		std::cout << "Robot is at position: " << Robot.get_state()[0] << ", " << Robot.get_state()[1] << std::endl;
-		std::cout << "Target is at position: " << 100 << std::endl;
+		std::cout << "Robot is at position: (" << Robot.get_state()[0] << ", " << Robot.get_state()[1] << ")" << std::endl;
+		std::cout << "Target is at position: (" << config::target_state[0] << ", " << config::target_state[1] << ")" << std::endl;
 
 
 		// create root of tree
@@ -37,7 +55,7 @@ int main(){
 		std::vector<tree<Node>::iterator> leaf_handles(n_rollouts);
 
 		for (int rollout = 0; rollout < n_rollouts; ++rollout) {
-			auto init_node = sampling_tree.append_child(root, Node(Robot.get_state(), 0, 0, rollout));
+			auto init_node = sampling_tree.append_child(root, Node(Robot.get_state(), 0, rollout,0));
 			leaf_handles[rollout] = init_node;
 		}
 
@@ -51,8 +69,8 @@ int main(){
 			double min_cost = std::numeric_limits<double>::max();;
 			for (int rollout = 0; rollout < n_rollouts; ++rollout) {
 				auto active_rollout = leaf_handles[rollout];
-				if (active_rollout->cost_ < min_cost) {
-					min_cost = active_rollout->cost_;
+				if (active_rollout->cost_cum_ < min_cost) {
+					min_cost = active_rollout->cost_cum_;
 				}
 			}
 
@@ -63,7 +81,7 @@ int main(){
 				auto active_rollout = leaf_handles[rollout];
 				std::cout << "cost of active rollout is " << active_rollout->cost_ << std::endl;
 
-				if (active_rollout->cost_ <= 1.05 * min_cost) {
+				if (active_rollout->cost_cum_ <= config::pruning_threshold * min_cost) {
 					leaf_handles_extending.push_back(active_rollout);
 				}
 //			else {
@@ -84,8 +102,7 @@ int main(){
 
 					std::vector<double> next_state = sim_system(active_rollout->state_, active_rollout->control_input_, 1);
 					leaf_handles[rollout] = sampling_tree.append_child(active_rollout,
-																	   Node(next_state, step, active_rollout->expert_type_,
-																			rollout));
+																	   Node(next_state, step, rollout,active_rollout->cost_cum_));
 				} else {
 					unsigned random_unsigned = get_random_uniform_unsigned(0, leaf_handles_extending.size()-1);
 
@@ -97,12 +114,18 @@ int main(){
 					// based on the state and the control input the system is propagated
 					std::vector<double> next_state = sim_system(extending_leaf->state_, active_rollout->control_input_, 1);
 					leaf_handles[rollout] = sampling_tree.append_child(extending_leaf,
-																	   Node(next_state, step, active_rollout->expert_type_,
-																			rollout));
+																	   Node(next_state, step, rollout, extending_leaf->cost_cum_));
 
 				}
 
 			}
+			if (config::log_sampling==true){
+				for (int i = 0; i < leaf_handles.size(); ++i) {
+					sampling_log.write(time, step,i,leaf_handles[i]->state_[0],leaf_handles[i]->state_[1],leaf_handles[i]->state_[2],leaf_handles[i]->state_[3],leaf_handles[i]->state_[4],leaf_handles[i]->state_[5], leaf_handles[i]->cost_cum_);
+					sampling_log.write_endl();
+				}
+			}
+
 		}
 
 
@@ -115,15 +138,15 @@ int main(){
 		while (start_node != end_node) {
 			int node_depth = sampling_tree.depth(start_node);
 
-			for (int i = 0; i < node_depth-1; ++i) {
-				if (i==node_depth-2){
+			for (int i = 0; i < node_depth; ++i) {
+				if (i==node_depth-1){
 					std::cout << "+- ";
 				} else {
 					std::cout << "|  ";
 				}
 			}
 
-			std::cout << "state: (" << std::round(start_node->state_[0]) << ", " << std::round(start_node->state_[1]) << ") cost: " << std::round(start_node->cost_) << std::endl;
+			std::cout << "state: (" << std::round(start_node->state_[0]) << ", " << std::round(start_node->state_[1]) << "), cost: " << std::round(start_node->cost_) << "/" << std::round(start_node->cost_cum_) << ", expert type: " << std::round(start_node->expert_type_) << std::endl;
 
 			start_node++;
 		}
@@ -145,9 +168,12 @@ int main(){
 
 		std::cout << std::endl;
 		std::cout << "Winning rollout has final state cost: " << best_leaf_handle->cost_ << std::endl;
-		std::cout << "Control input " << best_root_handle->control_input_[0] << ", " << best_root_handle->control_input_[1] <<" is applied to Robot" << std::endl;
+		std::cout << "Control input (" << best_root_handle->control_input_[0] << ", " << best_root_handle->control_input_[1] <<") is applied to Robot" << std::endl;
 		Robot.apply_control_input(best_root_handle->control_input_, 1);
-		std::cout << "Robot moved to position " << Robot.get_state()[0] << ", " << Robot.get_state()[1] << std::endl;
+		std::cout << "Robot moved to position (" << Robot.get_state()[0] << ", " << Robot.get_state()[1] << "), Target was: (" << config::target_state[0] << ", " << config::target_state[1] << ")" << std::endl;
+
+		sim_log.write(time+1, Robot.get_state()[0], Robot.get_state()[1], Robot.get_state()[2], Robot.get_state()[3], Robot.get_state()[4], Robot.get_state()[5]);
+		sim_log.write_endl();
 	}
 
 

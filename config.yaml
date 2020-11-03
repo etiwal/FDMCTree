@@ -1,0 +1,17 @@
+# solver parameters.
+solver:
+  rollouts: 100
+  horizon: 5
+
+  k_best: 4
+  cost_threshhold: 0.2
+  
+  input_variance: [0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15]
+
+  experts:
+    types: [0, 1, 2]
+    weights: [8, 1, 1]
+
+# custom params
+sys:
+  initial_state: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]

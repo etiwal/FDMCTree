@@ -22,20 +22,44 @@
 //	cost_ = get_cost(state_);
 //}
 
-Node::Node(std::vector<double> state, int step, int expert_type, size_t n) {
+Node::Node(const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent) {
 	state_ = state;
 	step_ = step;
-	expert_type_ = expert_type;
-	n_ = n;
+
+	rollout_ = rollout;
 	control_input_ = {0, 0};
+
+	cost_cum_parent_ = cost_cum_parent;
+
+	// get the expert type depending on the index of the rollout from a LOT
+	//YAML::Node ConfigNode = YAML::LoadFile("./config.yaml");
+	expert_type_ = get_expert_type(rollout_, 0);
 
 	// call function to calc cost based on state
 	cost_ = get_cost(state_);
+	cost_cum_ = cost_cum_parent_ + cost_;
 
 }
 
+void Node::set_expert_type_manually(size_t expert_type){
+	expert_type_ = expert_type;
+}
+
 void Node::sample_control_input(std::vector<double> state, int expert_type) {
-	control_input_ = {get_random_uniform_double(-1, 1), get_random_uniform_double(-1, 1)};
+	switch (expert_type) {
+		// random sampling from uniform distribution
+		case 0:
+			control_input_ = {get_random_uniform_double(-1, 1), get_random_uniform_double(-1, 1)};
+			break;
+		case 1:
+			control_input_ = {get_random_uniform_double(-2, 2), get_random_uniform_double(-2, 2)};
+			break;
+		case 2:
+			control_input_ = {get_random_uniform_double(-10, 10), get_random_uniform_double(-10, 10)};
+		default:
+			control_input_ = {get_random_uniform_double(-1, 1), get_random_uniform_double(-1, 1)};;
+	}
+
 }
 
 
