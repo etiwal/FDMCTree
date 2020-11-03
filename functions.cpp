@@ -13,6 +13,18 @@ double get_cost(std::vector<double> state) {
 	double ref_y = config::target_state[1];
 	double cost = std::sqrt(pow(ref_x - state[0],2) + pow(ref_y - state[1], 2));
 
+	double cost_obstacle = 0;
+	for (int i = 0; i < config::obstacle_pos.size(); i+=2) {
+		// implementation for circular object
+		double dist_from_obst_r;
+		dist_from_obst_r = std::sqrt(pow(config::obstacle_pos[i]-state[0],2)+pow(config::obstacle_pos[i+1]-state[1],2));
+		if (dist_from_obst_r <= config::obstacle_rad[i-(i*1/2)]){
+			cost_obstacle += config::obstacle_cost;
+		}
+	}
+
+	cost = cost + cost_obstacle;
+
 	return cost;
 }
 

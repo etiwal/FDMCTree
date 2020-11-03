@@ -18,6 +18,10 @@ namespace config
 	extern std::vector<int> expert_types;
 	extern std::vector<int> expert_weights;
 
+	extern int obstacle_cost;
+	extern std::vector<int> obstacle_rad;
+	extern std::vector<int> obstacle_pos;
+
 	extern std::vector<double> target_state;
 
 	extern double pruning_threshold;

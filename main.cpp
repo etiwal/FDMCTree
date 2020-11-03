@@ -10,6 +10,11 @@
 //namespace plt = matplotlibcpp;
 
 int main(){
+	Logger config_log { "config_log.txt" };
+	config_log.write("sim_time", "rollouts", "horizon", "obstacle_cost", "obstacle_rad_0", "obstacle_rad_1", "obstacle_rad_2","obstacle_rad_3", "obstacle_pos_0_x","obstacle_pos_0_y", "obstacle_pos_1_x","obstacle_pos_1_y", "obstacle_pos_2_x","obstacle_pos_2_y", "obstacle_pos_3_x","obstacle_pos_3_y", "target_state_0", "target_state_1");
+	config_log.write_endl();
+	config_log.write(config::sim_time, config::rollouts, config::horizon, config::obstacle_cost, config::obstacle_rad[0],config::obstacle_rad[1],config::obstacle_rad[2],config::obstacle_rad[3], config::obstacle_pos[0],config::obstacle_pos[1],config::obstacle_pos[2],config::obstacle_pos[3],config::obstacle_pos[4],config::obstacle_pos[5],config::obstacle_pos[6],config::obstacle_pos[7],config::target_state[0],config::target_state[1]);
+	config_log.write_endl();
 
 	Logger sim_log { "sim_log.txt" };
 	sim_log.write("simstep", "state_0", "state_1", "state_2", "state_3", "state_4", "state_5");

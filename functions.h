@@ -25,6 +25,4 @@ std::vector<double> sim_system(std::vector<double> state, std::vector<double> co
 
 size_t get_expert_type(int rollout, size_t sampling_type);
 
-
-
 //void print_tree(tree<Node> tree_input);
