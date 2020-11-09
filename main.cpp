@@ -10,6 +10,7 @@
 //namespace plt = matplotlibcpp;
 
 int main(){
+	// Init Logging
 	Logger config_log { "config_log.txt" };
 	config_log.write("sim_time", "rollouts", "horizon", "obstacle_cost", "obstacle_rad_0", "obstacle_rad_1", "obstacle_rad_2","obstacle_rad_3", "obstacle_pos_0_x","obstacle_pos_0_y", "obstacle_pos_1_x","obstacle_pos_1_y", "obstacle_pos_2_x","obstacle_pos_2_y", "obstacle_pos_3_x","obstacle_pos_3_y", "target_state_0", "target_state_1");
 	config_log.write_endl();
@@ -29,7 +30,7 @@ int main(){
     int horizon = config::horizon;//ConfigNode["solver"]["horizon"].as<int>();
     int n_rollouts = config::rollouts;//ConfigNode["solver"]["rollouts"].as<int>();
 
-	std::vector<double> initial_state = {0, 0, 0, 0, 0, 0};
+	std::vector<double> initial_state = config::initial_state;
 
     Sys Robot(initial_state);
 
@@ -53,14 +54,16 @@ int main(){
 
 
 		// create root of tree
-		auto root = sampling_tree.insert(sampling_tree.begin(), Node(Robot.get_state(), 0, 0, 0));
+		GaussianSampler sampler_root(2);
+		auto root = sampling_tree.insert(sampling_tree.begin(), Node(Robot.get_state(), 0, 0, 0, sampler_root));
 
 		std::cout << std::endl;
 		std::cout << "initializing nodes and an array with leaf iterator objects" << std::endl;
 		std::vector<tree<Node>::iterator> leaf_handles(n_rollouts);
 
 		for (int rollout = 0; rollout < n_rollouts; ++rollout) {
-			auto init_node = sampling_tree.append_child(root, Node(Robot.get_state(), 0, rollout,0));
+			GaussianSampler sampler_init(2);
+			auto init_node = sampling_tree.append_child(root, Node(Robot.get_state(), 0, rollout,0, sampler_init));
 			leaf_handles[rollout] = init_node;
 		}
 
@@ -98,6 +101,7 @@ int main(){
 
 			for (int rollout = 0; rollout < n_rollouts; ++rollout) {
 				auto active_rollout = leaf_handles[rollout];
+
 				// check if active_rollout is in extendable vector ...
 				if (std::find(leaf_handles_extending.begin(), leaf_handles_extending.end(), active_rollout) !=
 					leaf_handles_extending.end()) {
@@ -107,7 +111,7 @@ int main(){
 
 					std::vector<double> next_state = sim_system(active_rollout->state_, active_rollout->control_input_, 1);
 					leaf_handles[rollout] = sampling_tree.append_child(active_rollout,
-																	   Node(next_state, step, rollout,active_rollout->cost_cum_));
+																	   Node(next_state, step, rollout,active_rollout->cost_cum_, active_rollout->sampler_));
 				} else {
 					unsigned random_unsigned = get_random_uniform_unsigned(0, leaf_handles_extending.size()-1);
 
@@ -119,7 +123,7 @@ int main(){
 					// based on the state and the control input the system is propagated
 					std::vector<double> next_state = sim_system(extending_leaf->state_, active_rollout->control_input_, 1);
 					leaf_handles[rollout] = sampling_tree.append_child(extending_leaf,
-																	   Node(next_state, step, rollout, extending_leaf->cost_cum_));
+																	   Node(next_state, step, rollout, extending_leaf->cost_cum_, extending_leaf->sampler_));
 
 				}
 

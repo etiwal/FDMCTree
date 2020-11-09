@@ -15,6 +15,13 @@ namespace config
 	extern int rollouts;
 	extern int horizon;
 
+	extern int state_dim;
+	extern int control_dim;
+
+	extern std::vector<double> initial_state;
+	extern std::vector<double> initial_mean;
+	extern std::vector<double> initial_cov;
+
 	extern std::vector<int> expert_types;
 	extern std::vector<int> expert_weights;
 

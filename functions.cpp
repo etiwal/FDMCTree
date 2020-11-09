@@ -113,6 +113,34 @@ size_t get_expert_type(int rollout, size_t sampling_type) {
 	return expert_type_;
 }
 
+GaussianSampler combine_distributions(std::vector<GaussianSampler> input_samplers, size_t type){
+	auto sampler = input_samplers[0];
+
+	switch (type) {
+		// type 0, neglect expert knowladge and return original sampler
+		case 0:
+			sampler = sampler;
+
+		// type 1, combine the distributions using multiplication of gaussians
+		case 1:
+			for (int i = 0; i < input_samplers.size(); ++i) {
+				if (i!=0){
+					sampler.combine_dist_mult(input_samplers[i]);
+				};
+			};
+		// type 2, combine the distributions using min loss of info (KL Divergence)
+		case 2:
+			for (int i = 0; i < input_samplers.size(); ++i) {
+				if (i!=0){
+					sampler.combine_dist_KL(input_samplers[i]);
+				}
+			}
+
+
+	}
+	return sampler;
+}
+
 //void print_tree(tree<Node> tree_input){
 //
 //};

@@ -12,12 +12,23 @@
 #include <iostream>
 
 #include "functions.h"
+#include "gaussian_sampler.h"
 
+class Expert{
+public:
+	explicit Expert(std::vector<int> expert_type_list);
+	Expert() = default;
+	~Expert() = default;
+
+	std::vector<int> expert_type_list_;
+
+	GaussianSampler get_expert_sampler(std::vector<double> state, size_t expert_type, GaussianSampler sampler_parent);
+};
 
 struct Node{
 public:
 //	Node(double state, double control_input, int step, int expert_type, size_t n, size_t parent);
-	Node(const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent);
+	Node(const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent, GaussianSampler parent_sampler);
 	Node() = default;
 	~Node() = default;
 
@@ -34,6 +45,10 @@ public:
 
 	void set_expert_type_manually(size_t expert_type);
 
+	//TODO: Make it work with private object.
+	GaussianSampler parent_sampler_;
+	GaussianSampler sampler_;
+	Expert Expert_Instance;
 };
 
 struct Sys{
@@ -52,3 +67,5 @@ public:
 
 	std::vector<double> get_state();
 };
+
+

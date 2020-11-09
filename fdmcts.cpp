@@ -8,21 +8,57 @@
 #include <random>
 #include <ctime>
 
+// Expert
+Expert::Expert(std::vector<int> expert_type_list) {
+	expert_type_list_ = expert_type_list;
+}
 
-// Node object
-//Node::Node(double state, double control_input, int step, int expert_type, size_t n, size_t parent) {
-//	state_ = state;
-//	control_input_ = control_input;
-//	step_ = step;
-//	expert_type_ = expert_type;
-//	n_ = n;
-//	parent_ = parent;
-//
-//	// call function to calc cost based on state
-//	cost_ = get_cost(state_);
-//}
+GaussianSampler Expert::get_expert_sampler(std::vector<double> state, size_t expert_type, GaussianSampler sampler_parent) {
+	for (auto expert_type : expert_type_list_) {
+		//assert() that the expert is in the list of experts!
+	}
+	GaussianSampler expert_sampler(config::control_dim);
 
-Node::Node(const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent) {
+	switch (expert_type) {
+		// Gauss random
+		case 0:
+			expert_sampler.set_covariance(std::vector<double> {1,1});
+			expert_sampler.set_mean(std::vector<double> {0,0});
+			break;
+		case 1:
+			expert_sampler.set_covariance(std::vector<double> {2,2});
+			expert_sampler.set_mean(std::vector<double> {0,0});
+			break;
+		case 2:
+			expert_sampler.set_covariance(std::vector<double> {10,10});
+			expert_sampler.set_mean(std::vector<double> {0,0});
+			// Gauss and informed by previous
+			break;
+		case 3:
+			expert_sampler.set_covariance(std::vector<double> {1,1});
+			expert_sampler.set_mean(std::vector<double> {0,0});
+
+			expert_sampler.combine_dist_mult(sampler_parent);
+			break;
+		case 4:
+			expert_sampler.set_covariance(std::vector<double> {10,10});
+			expert_sampler.set_mean(std::vector<double> {0,0});
+
+			expert_sampler.combine_dist_mult(sampler_parent);
+			break;
+		default:
+			expert_sampler.set_covariance(std::vector<double> {1,1});
+			expert_sampler.set_mean(std::vector<double> {0,0});
+			break;
+	}
+
+	return expert_sampler;
+}
+
+
+
+// Node
+Node::Node(const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent, GaussianSampler parent_sampler) : sampler_(2), 	parent_sampler_(2) , Expert_Instance(config::expert_types){
 	state_ = state;
 	step_ = step;
 
@@ -39,12 +75,17 @@ Node::Node(const std::vector<double> &state, int step, size_t rollout, double co
 	cost_ = get_cost(state_);
 	cost_cum_ = cost_cum_parent_ + cost_;
 
+	parent_sampler_ = parent_sampler;
+
+	// set intial mean and covariance
+	sampler_ = Expert_Instance.get_expert_sampler(state_, expert_type_, parent_sampler_);
 }
 
 void Node::set_expert_type_manually(size_t expert_type){
 	expert_type_ = expert_type;
 }
 
+//legacy code!
 void Node::sample_control_input(std::vector<double> state, int expert_type) {
 	switch (expert_type) {
 		// random sampling from uniform distribution
@@ -56,14 +97,16 @@ void Node::sample_control_input(std::vector<double> state, int expert_type) {
 			break;
 		case 2:
 			control_input_ = {get_random_uniform_double(-10, 10), get_random_uniform_double(-10, 10)};
+		case 3:
+			control_input_ = {get_random_uniform_double(-10, 10), get_random_uniform_double(-10, 10)};
 		default:
 			control_input_ = {get_random_uniform_double(-1, 1), get_random_uniform_double(-1, 1)};;
 	}
 
-}
+}//legacy code!
 
 
-// Sys object
+// Sys
 Sys::Sys(std::vector<double> &init_state) {
 	state_ = init_state;
 }
@@ -86,6 +129,5 @@ int Sys::get_control_dim(){
 };
 
 
-// Sim object
 
 
