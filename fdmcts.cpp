@@ -9,39 +9,38 @@
 #include <ctime>
 
 // Expert
-Expert::Expert(std::vector<int> expert_type_list) {
+Expert::Expert(const std::vector<int>& expert_type_list) {
 	expert_type_list_ = expert_type_list;
 }
 
-GaussianSampler Expert::get_expert_sampler(std::vector<double> state, size_t expert_type, GaussianSampler sampler_parent) {
-	for (auto expert_type : expert_type_list_) {
-		//assert() that the expert is in the list of experts!
-	}
+GaussianSampler Expert::get_expert_sampler(const std::vector<double>& state, size_t expert_type, const GaussianSampler& sampler_parent) {
+	//assert() that the expert is in the list of experts!
+
 	GaussianSampler expert_sampler(config::control_dim);
 
 	switch (expert_type) {
 		// Gauss random
 		case 0:
-			expert_sampler.set_covariance(std::vector<double> {1,1});
+			expert_sampler.set_covariance(std::vector<double> {0.5,0.5});
 			expert_sampler.set_mean(std::vector<double> {0,0});
 			break;
 		case 1:
-			expert_sampler.set_covariance(std::vector<double> {2,2});
+			expert_sampler.set_covariance(std::vector<double> {1,1});
 			expert_sampler.set_mean(std::vector<double> {0,0});
 			break;
 		case 2:
-			expert_sampler.set_covariance(std::vector<double> {10,10});
+			expert_sampler.set_covariance(std::vector<double> {2,2});
 			expert_sampler.set_mean(std::vector<double> {0,0});
 			// Gauss and informed by previous
 			break;
 		case 3:
-			expert_sampler.set_covariance(std::vector<double> {1,1});
+			expert_sampler.set_covariance(std::vector<double> {0.5,0.5});
 			expert_sampler.set_mean(std::vector<double> {0,0});
 
 			expert_sampler.combine_dist_mult(sampler_parent);
 			break;
 		case 4:
-			expert_sampler.set_covariance(std::vector<double> {10,10});
+			expert_sampler.set_covariance(std::vector<double> {4,4});
 			expert_sampler.set_mean(std::vector<double> {0,0});
 
 			expert_sampler.combine_dist_mult(sampler_parent);
@@ -55,10 +54,11 @@ GaussianSampler Expert::get_expert_sampler(std::vector<double> state, size_t exp
 	return expert_sampler;
 }
 
+//Expert Expert_Instance(config::expert_types);
 
 
 // Node
-Node::Node(const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent, GaussianSampler parent_sampler) : sampler_(2), 	parent_sampler_(2) , Expert_Instance(config::expert_types){
+Node::Node(const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent, GaussianSampler parent_sampler) : sampler_(2), 	parent_sampler_(2), Expert_Instance(config::expert_types) {
 	state_ = state;
 	step_ = step;
 
@@ -85,25 +85,29 @@ void Node::set_expert_type_manually(size_t expert_type){
 	expert_type_ = expert_type;
 }
 
-//legacy code!
-void Node::sample_control_input(std::vector<double> state, int expert_type) {
-	switch (expert_type) {
-		// random sampling from uniform distribution
-		case 0:
-			control_input_ = {get_random_uniform_double(-1, 1), get_random_uniform_double(-1, 1)};
-			break;
-		case 1:
-			control_input_ = {get_random_uniform_double(-2, 2), get_random_uniform_double(-2, 2)};
-			break;
-		case 2:
-			control_input_ = {get_random_uniform_double(-10, 10), get_random_uniform_double(-10, 10)};
-		case 3:
-			control_input_ = {get_random_uniform_double(-10, 10), get_random_uniform_double(-10, 10)};
-		default:
-			control_input_ = {get_random_uniform_double(-1, 1), get_random_uniform_double(-1, 1)};;
-	}
+void Node::set_control_input(std::vector<double> control_input) {
+	control_input_ = control_input;
+}
 
-}//legacy code!
+////legacy code!
+//void Node::sample_control_input(std::vector<double> state, int expert_type) {
+//	switch (expert_type) {
+//		// random sampling from uniform distribution
+//		case 0:
+//			control_input_ = {get_random_uniform_double(-1, 1), get_random_uniform_double(-1, 1)};
+//			break;
+//		case 1:
+//			control_input_ = {get_random_uniform_double(-2, 2), get_random_uniform_double(-2, 2)};
+//			break;
+//		case 2:
+//			control_input_ = {get_random_uniform_double(-10, 10), get_random_uniform_double(-10, 10)};
+//		case 3:
+//			control_input_ = {get_random_uniform_double(-10, 10), get_random_uniform_double(-10, 10)};
+//		default:
+//			control_input_ = {get_random_uniform_double(-1, 1), get_random_uniform_double(-1, 1)};;
+//	}
+//
+//}//legacy code!
 
 
 // Sys

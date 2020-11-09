@@ -73,7 +73,7 @@ public:
 	}
 
 	void combine_dist_mult(const GaussianSampler& dist_new) {
-		dist_->mult_dist(dist_new.sigma_, dist_new.sigma_);
+		dist_->mult_dist(dist_new.mean_, dist_new.sigma_);
 	}
 
 	void combine_dist_KL(const GaussianSampler& dist_new) {

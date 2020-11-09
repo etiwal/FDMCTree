@@ -107,7 +107,14 @@ int main(){
 					leaf_handles_extending.end()) {
 					std::cout << "active_rollout will be directly extended" << std::endl;
 					// based on the state and the control input the system is propagated
-					active_rollout->sample_control_input(active_rollout->state_, active_rollout->expert_type_);
+
+//					active_rollout->sample_control_input(active_rollout->state_, active_rollout->expert_type_);
+					std::vector<double> control_input(2);
+					auto sampled_control_input = active_rollout->sampler_.get_sample();
+					control_input[0] = sampled_control_input(0,0);
+					control_input[1] = sampled_control_input(1,0);
+
+					active_rollout->set_control_input(control_input);
 
 					std::vector<double> next_state = sim_system(active_rollout->state_, active_rollout->control_input_, 1);
 					leaf_handles[rollout] = sampling_tree.append_child(active_rollout,
@@ -118,7 +125,14 @@ int main(){
 					std::cout << "active_rollout will be extended on leaf " << random_unsigned << std::endl;
 					auto extending_leaf = leaf_handles_extending[random_unsigned];
 
-					active_rollout->sample_control_input(extending_leaf->state_, active_rollout->expert_type_);
+//					active_rollout->sample_control_input(extending_leaf->state_, active_rollout->expert_type_);
+					std::vector<double> control_input(2);
+					auto sampled_control_input = active_rollout->sampler_.get_sample();
+					control_input[0] = sampled_control_input(0,0);
+					control_input[1] = sampled_control_input(1,0);
+
+					active_rollout->set_control_input(control_input);
+
 
 					// based on the state and the control input the system is propagated
 					std::vector<double> next_state = sim_system(extending_leaf->state_, active_rollout->control_input_, 1);

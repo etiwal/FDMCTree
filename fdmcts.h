@@ -16,13 +16,13 @@
 
 class Expert{
 public:
-	explicit Expert(std::vector<int> expert_type_list);
+	explicit Expert(const std::vector<int>& expert_type_list);
 	Expert() = default;
 	~Expert() = default;
 
 	std::vector<int> expert_type_list_;
 
-	GaussianSampler get_expert_sampler(std::vector<double> state, size_t expert_type, GaussianSampler sampler_parent);
+	GaussianSampler get_expert_sampler(const std::vector<double>& state, size_t expert_type, const GaussianSampler& sampler_parent);
 };
 
 struct Node{
@@ -41,6 +41,7 @@ public:
 	double cost_cum_;
 	double cost_cum_parent_;
 
+	void set_control_input(std::vector<double> control_input);
 	void sample_control_input(std::vector<double> state, int expert_type);
 
 	void set_expert_type_manually(size_t expert_type);

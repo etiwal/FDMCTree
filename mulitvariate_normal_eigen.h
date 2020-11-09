@@ -54,7 +54,8 @@ struct multivariate_normal {
 		return mean + transform * Eigen::VectorXd{ mean.size() }.unaryExpr([&](auto x) { return dist(gen); });
 	}
 
-	void mult_dist(Eigen::MatrixXd const& mean_new, Eigen::MatrixXd const& cov_new) {
+	void mult_dist(Eigen::VectorXd const& mean_new, Eigen::MatrixXd const& cov_new) {
+		mean = (mean + mean_new) / 2;
 
 		std::cout << "this mode is not yet supported!" << std::endl;
 	}
