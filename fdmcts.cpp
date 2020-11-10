@@ -25,14 +25,14 @@ GaussianSampler Expert::get_expert_sampler(const std::vector<double>& state, siz
 			expert_sampler.set_mean(std::vector<double> {0,0});
 			break;
 		case 1:
-			expert_sampler.set_covariance(std::vector<double> {1,1});
+			expert_sampler.set_covariance(std::vector<double> {2,2});
 			expert_sampler.set_mean(std::vector<double> {0,0});
 			break;
 		case 2:
-			expert_sampler.set_covariance(std::vector<double> {2,2});
+			expert_sampler.set_covariance(std::vector<double> {10,10});
 			expert_sampler.set_mean(std::vector<double> {0,0});
-			// Gauss and informed by previous
 			break;
+		// Gauss and informed by previous
 		case 3:
 			expert_sampler.set_covariance(std::vector<double> {0.5,0.5});
 			expert_sampler.set_mean(std::vector<double> {0,0});

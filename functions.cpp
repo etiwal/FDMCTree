@@ -43,14 +43,19 @@ unsigned get_random_uniform_unsigned(unsigned minV, unsigned maxV) {
 }
 
 std::vector<double> sim_system(std::vector<double> state, std::vector<double> control_input, double timesteps) {
-	double a_x = control_input[0] + state[4];
-	double a_y = control_input[1] + state[5];
+	auto robot_mass = config::robot_mass;
 
-	double v_x = a_x * timesteps + state[2];
-	double v_y = a_y * timesteps + state[3];
+	auto f_x = control_input[0];
+	auto f_y = control_input[1];
 
-	double p_x = a_x / 2 * timesteps * timesteps + state[0];
-	double p_y = a_y / 2 * timesteps * timesteps + state[1];
+	double a_x = f_x/robot_mass;
+	double a_y = f_y/robot_mass;
+
+	double v_x = (a_x * timesteps) + state[2];
+	double v_y = (a_y * timesteps) + state[3];
+
+	double p_x = (a_x / 2 * timesteps * timesteps) + (state[2] * timesteps) + state[0];
+	double p_y = (a_y / 2 * timesteps * timesteps) + (state[3] * timesteps) + state[1];
 
 	return {p_x, p_y, v_x, v_y, a_x, a_y};
 }

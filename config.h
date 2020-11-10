@@ -10,17 +10,19 @@
 
 namespace config
 {
+	// Simulation
 	extern int sim_time;
 
 	extern int rollouts;
 	extern int horizon;
 
-	extern int state_dim;
-	extern int control_dim;
-
+	// - init
 	extern std::vector<double> initial_state;
 	extern std::vector<double> initial_mean;
 	extern std::vector<double> initial_cov;
+
+	// - target
+	extern std::vector<double> target_state;
 
 	extern std::vector<int> expert_types;
 	extern std::vector<int> expert_weights;
@@ -29,11 +31,19 @@ namespace config
 	extern std::vector<int> obstacle_rad;
 	extern std::vector<int> obstacle_pos;
 
-	extern std::vector<double> target_state;
-
 	extern double pruning_threshold;
 
+	// Robot
+	extern int state_dim;
+	extern int control_dim;
+
+	extern double robot_mass;
+
+	// Logging
 	extern bool log_sampling;
+
+	// Debug
+	extern size_t debug_level;
 }
 
 
