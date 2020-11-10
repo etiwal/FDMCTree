@@ -8,6 +8,7 @@
 
 #include "functions.h"
 
+
 double get_cost(std::vector<double> state) {
 	double ref_x = config::target_state[0];
 	double ref_y = config::target_state[1];
@@ -60,92 +61,8 @@ std::vector<double> sim_system(std::vector<double> state, std::vector<double> co
 	return {p_x, p_y, v_x, v_y, a_x, a_y};
 }
 
-size_t get_expert_type(int rollout, size_t sampling_type) {
-	size_t expert_type_ = 0;
-
-	auto n_rollouts = config::rollouts;//ConfigNode["solver"]["rollouts"].as<int>();
-	auto expert_types = config::expert_types;//ConfigNode["solver"]["experts"]["types"].as<std::vector<int>>();
-	auto expert_weights = config::expert_weights;//ConfigNode["solver"]["experts"]["weights"].as<std::vector<double>>();
-
-	assert(expert_types.size() == expert_weights.size());
-	assert(sampling_type == 0 | sampling_type == 1);
-
-	size_t n_experts = expert_weights.size();
-
-	double sum_expert_weights = 0;
-	for (double expert_weight : expert_weights) {
-		sum_expert_weights += expert_weight;
+void debug_print(size_t debug_lv, const boost::format& boost_str){
+	if (debug_lv <= config::debug_level){
+		std::cout << boost_str.str() << std::endl;
 	}
-
-	std::vector<double> expert_weights_normalized_CDF(expert_weights.size());
-	for (int i = 0; i < expert_weights.size(); ++i) {
-		if (i==0){
-			expert_weights_normalized_CDF[i] = expert_weights[i] / sum_expert_weights;
-		} else {
-			expert_weights_normalized_CDF[i] = expert_weights_normalized_CDF[i-1] + (expert_weights[i] / sum_expert_weights);
-		}
-	}
-
-	// def for LOT
-	double pos_rollout = (double) rollout / (double) n_rollouts;
-	//TODO: Move this such that it is only created once and then directly called!
-	switch (sampling_type) {
-		// LOT (The weights of the different experts are guaranteed to be represented in the final round)
-		case 0:
-			for (int i = 0; i < expert_weights.size(); ++i) {
-				// lower end
-				if (i == 0) {
-					if (pos_rollout < expert_weights_normalized_CDF[i]) {
-						expert_type_ = expert_types[i];
-						break;
-					}
-				} else { // other cases
-					if (expert_weights_normalized_CDF[i-1] <= pos_rollout & pos_rollout < expert_weights_normalized_CDF[i]) {
-						expert_type_ = expert_types[i];
-						break;
-					}
-				}
-
-			}
-			break;
-
-			// Sampling based on weights
-		case 1:
-			expert_type_ = expert_types[0];
-			break;
-	}
-
-	return expert_type_;
-}
-
-GaussianSampler combine_distributions(std::vector<GaussianSampler> input_samplers, size_t type){
-	auto sampler = input_samplers[0];
-
-	switch (type) {
-		// type 0, neglect expert knowladge and return original sampler
-		case 0:
-			sampler = sampler;
-
-		// type 1, combine the distributions using multiplication of gaussians
-		case 1:
-			for (int i = 0; i < input_samplers.size(); ++i) {
-				if (i!=0){
-					sampler.combine_dist_mult(input_samplers[i]);
-				};
-			};
-		// type 2, combine the distributions using min loss of info (KL Divergence)
-		case 2:
-			for (int i = 0; i < input_samplers.size(); ++i) {
-				if (i!=0){
-					sampler.combine_dist_KL(input_samplers[i]);
-				}
-			}
-
-
-	}
-	return sampler;
-}
-
-//void print_tree(tree<Node> tree_input){
-//
-//};
+};

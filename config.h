@@ -8,8 +8,7 @@
 
 #include <vector>
 
-namespace config
-{
+namespace config {
 	// Simulation
 	extern int sim_time;
 

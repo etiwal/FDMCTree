@@ -10,25 +10,35 @@
 #include <cstddef>
 #include <vector>
 #include <iostream>
+#include <map>
 
 #include "functions.h"
 #include "gaussian_sampler.h"
 
 class Expert{
 public:
-	explicit Expert(const std::vector<int>& expert_type_list);
-	Expert() = default;
+	Expert();
 	~Expert() = default;
 
 	std::vector<int> expert_type_list_;
 
+	int get_expert_from_LOT(size_t rollout);
+
 	GaussianSampler get_expert_sampler(const std::vector<double>& state, size_t expert_type, const GaussianSampler& sampler_parent);
+
+private:
+	std::map<size_t, int> rollout_expert_map;
+	static size_t get_expert_type(int rollout, size_t sampling_type);
+
 };
+
+//// defining Expert Object outside of Node
+//Expert Expert_Instance;
 
 struct Node{
 public:
 //	Node(double state, double control_input, int step, int expert_type, size_t n, size_t parent);
-	Node(const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent, GaussianSampler parent_sampler);
+	Node(const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent, const GaussianSampler& parent_sampler);
 	Node() = default;
 	~Node() = default;
 
@@ -42,7 +52,6 @@ public:
 	double cost_cum_parent_;
 
 	void set_control_input(std::vector<double> control_input);
-	void sample_control_input(std::vector<double> state, int expert_type);
 
 	void set_expert_type_manually(size_t expert_type);
 
@@ -50,23 +59,6 @@ public:
 	GaussianSampler parent_sampler_;
 	GaussianSampler sampler_;
 	Expert Expert_Instance;
-};
-
-struct Sys{
-public:
-	explicit Sys(std::vector<double> &init_state);
-	Sys() = default;
-	~Sys() = default;
-
-	std::vector<double> state_;
-
-	static int get_state_dim();
-
-	static int get_control_dim();
-
-	void apply_control_input(const std::vector<double>& control_input, int timesteps);
-
-	std::vector<double> get_state();
 };
 
 

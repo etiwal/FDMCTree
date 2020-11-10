@@ -1,8 +1,12 @@
 #include <iostream>
+#include <boost/format.hpp>
+
 #include "functions.h"
 #include "fdmcts.h"
 #include "tree.h"
 #include "logger.h"
+#include "sys_sim.h"
+#include "trajects.h"
 
 //#include "matplotlibcpp.h"
 //#include <cmath>
@@ -34,6 +38,8 @@ int main(){
 
     Sys Robot(initial_state);
 
+    extern Expert Expert_Instance();
+
 	for (int time = 0; time < config::sim_time; ++time) {
 		// generate rollouts
 		// init tree and root
@@ -58,7 +64,7 @@ int main(){
 		auto root = sampling_tree.insert(sampling_tree.begin(), Node(Robot.get_state(), 0, 0, 0, sampler_root));
 
 		std::cout << std::endl;
-		std::cout << "initializing nodes and an array with leaf iterator objects" << std::endl;
+		debug_print(2, boost::format("initializing nodes and an array with leaf iterator objects"));
 		std::vector<tree<Node>::iterator> leaf_handles(n_rollouts);
 
 		for (int rollout = 0; rollout < n_rollouts; ++rollout) {
@@ -68,9 +74,10 @@ int main(){
 		}
 
 		for (int step = 0; step < horizon; ++step) {
-			std::cout << "time-step: " << step << std::endl;
+			debug_print(2, boost::format("time-step: %1%") % step);
+			debug_print(2, boost::format("Define Set of leaf handles which will be extended"));
+			debug_print(2, boost::format(""));
 
-			std::cout << "Define Set of leaf handles which will be extended" << std::endl;
 			std::vector<tree<Node>::iterator> leaf_handles_extending = {};
 
 			// get the min cost of the leafs
@@ -82,12 +89,12 @@ int main(){
 				}
 			}
 
-			std::cout << "current min cost is " << min_cost << std::endl;
+//			std::cout << "current min cost is " << min_cost << std::endl;
 
 			// construct a set of extandable leafs
 			for (int rollout = 0; rollout < n_rollouts; ++rollout) {
 				auto active_rollout = leaf_handles[rollout];
-				std::cout << "cost of active rollout is " << active_rollout->cost_ << std::endl;
+//				std::cout << "cost of active rollout is " << active_rollout->cost_ << std::endl;
 
 				if (active_rollout->cost_cum_ <= config::pruning_threshold * min_cost) {
 					leaf_handles_extending.push_back(active_rollout);
@@ -97,7 +104,7 @@ int main(){
 //			};
 			}
 
-			std::cout << "currently we have n extendable leafs: " << leaf_handles_extending.size() << std::endl;
+			debug_print(2, boost::format("currently we have n extendable leafs: %1%") % leaf_handles_extending.size());
 
 			for (int rollout = 0; rollout < n_rollouts; ++rollout) {
 				auto active_rollout = leaf_handles[rollout];
@@ -105,7 +112,7 @@ int main(){
 				// check if active_rollout is in extendable vector ...
 				if (std::find(leaf_handles_extending.begin(), leaf_handles_extending.end(), active_rollout) !=
 					leaf_handles_extending.end()) {
-					std::cout << "active_rollout will be directly extended" << std::endl;
+					debug_print(2, boost::format("active_rollout will be directly extended"));
 					// based on the state and the control input the system is propagated
 
 //					active_rollout->sample_control_input(active_rollout->state_, active_rollout->expert_type_);
@@ -122,7 +129,7 @@ int main(){
 				} else {
 					unsigned random_unsigned = get_random_uniform_unsigned(0, leaf_handles_extending.size()-1);
 
-					std::cout << "active_rollout will be extended on leaf " << random_unsigned << std::endl;
+					debug_print(2, boost::format("active_rollout will be extended on leaf %1%") % random_unsigned);
 					auto extending_leaf = leaf_handles_extending[random_unsigned];
 
 //					active_rollout->sample_control_input(extending_leaf->state_, active_rollout->expert_type_);
@@ -151,27 +158,28 @@ int main(){
 
 		}
 
-
-		// print tree
-		std::cout << std::endl;
-
 		tree<Node>::iterator start_node = sampling_tree.begin();
 		tree<Node>::iterator end_node = sampling_tree.end();
 
-		while (start_node != end_node) {
-			int node_depth = sampling_tree.depth(start_node);
+		if (config::debug_level >= 1) {
+			while (start_node != end_node) {
+				int node_depth = sampling_tree.depth(start_node);
 
-			for (int i = 0; i < node_depth; ++i) {
-				if (i==node_depth-1){
-					std::cout << "+- ";
-				} else {
-					std::cout << "|  ";
+				for (int i = 0; i < node_depth; ++i) {
+					if (i == node_depth - 1) {
+						std::cout << "+- ";
+					} else {
+						std::cout << "|  ";
+					}
 				}
+
+				std::cout << "state: (" << std::round(start_node->state_[0]) << ", "
+						  << std::round(start_node->state_[1]) << "), cost: " << std::round(start_node->cost_) << "/"
+						  << std::round(start_node->cost_cum_) << ", expert type: "
+						  << std::round(start_node->expert_type_) << std::endl;
+
+				start_node++;
 			}
-
-			std::cout << "state: (" << std::round(start_node->state_[0]) << ", " << std::round(start_node->state_[1]) << "), cost: " << std::round(start_node->cost_) << "/" << std::round(start_node->cost_cum_) << ", expert type: " << std::round(start_node->expert_type_) << std::endl;
-
-			start_node++;
 		}
 
 

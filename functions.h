@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <random>
+#include <boost/format.hpp>
 
 #include "tree.h"
 
@@ -27,6 +28,4 @@ std::vector<double> sim_system(std::vector<double> state, std::vector<double> co
 
 size_t get_expert_type(int rollout, size_t sampling_type);
 
-GaussianSampler combine_distributions(std::vector<GaussianSampler> input_dists, size_t type);
-
-//void print_tree(tree<Node> tree_input);
+void debug_print(size_t debug_lv, const boost::format& boost_str);

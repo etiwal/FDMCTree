@@ -3,6 +3,7 @@
 //
 
 #include <vector>
+#include "config.h"
 
 namespace config
 {
@@ -10,7 +11,7 @@ namespace config
 	int sim_time = 100;
 
 	int rollouts = 50;
-	int horizon = 30;
+	int horizon = 20;
 
 	// - init
 	std::vector<double> initial_state = {0, 0, 0, 0, 0, 0};
@@ -24,7 +25,7 @@ namespace config
 	std::vector<int> obstacle_rad = {10, 5, 10, 5};
 	std::vector<int> obstacle_pos = {5, 20, 55, 15, 40, 20, 80, 40};
 
-	std::vector<int> expert_types = {1, 2, 3};
+	std::vector<int> expert_types = {0, 1, 2};
 	std::vector<int> expert_weights = {1, 1, 1};
 
 	double pruning_threshold = 1.5;

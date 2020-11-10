@@ -42,9 +42,11 @@ public:
 	}
 
 	void set_covariance(Eigen::MatrixXd &v) {
-		assert(v.rows() != v.cols() || v.rows() != n_);
+		assert(1==0);
+		assert(v.rows() == v.cols() && v.rows() == n_);
 		sigma_ = v;
 		sigma_inv_ = stable_inverse(v);
+		dist_->set_covariance(sigma_);
 	}
 
 	template<typename T>
@@ -72,12 +74,36 @@ public:
 		return sample;
 	}
 
-	void combine_dist_mult(const GaussianSampler& dist_new) {
-		dist_->mult_dist(dist_new.mean_, dist_new.sigma_);
+	void combine_dist_mult(const GaussianSampler& dist_2) {
+		// based on http://compbio.fmph.uniba.sk/vyuka/ml/old/2008/handouts/matrix-cookbook.pdf
+		std::vector<double> sigma_new_vector(n_);
+		Eigen::VectorXd mean_new(n_);
+		Eigen::MatrixXd sigma_new(n_, n_);
+		Eigen::MatrixXd sigma_inv_new(n_, n_);
+
+		auto mean_2 = dist_2.mean_;
+		auto sigma_2 = dist_2.sigma_;
+		auto sigma_inv_2 = dist_2.sigma_inv_;
+
+		// calc new sigma
+		sigma_inv_new = sigma_inv_ + sigma_inv_2;
+		for (int i = 0; i < n_; ++i) {
+			sigma_new(i,i) = 1. / sigma_inv_new(i,i);
+		}
+
+		for (int i = 0; i < n_ ; ++i) {
+			sigma_new_vector[i] = sigma_new(i,i);
+		}
+
+		// calc new mean
+		mean_new = (sigma_new * sigma_inv_ * mean_) + (sigma_new * sigma_inv_2 * mean_2);
+
+		this->set_covariance(sigma_new_vector);
+		this->set_mean(mean_new);
 	}
 
 	void combine_dist_KL(const GaussianSampler& dist_new) {
-		(*dist_).KL_dist();
+		perror ("this mode is not yet supported");
 	}
 
 	Eigen::MatrixXd stable_inverse(const Eigen::MatrixXd &A) {

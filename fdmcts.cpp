@@ -9,8 +9,11 @@
 #include <ctime>
 
 // Expert
-Expert::Expert(const std::vector<int>& expert_type_list) {
-	expert_type_list_ = expert_type_list;
+Expert::Expert() {
+	expert_type_list_ = config::expert_types;
+	for (size_t i = 0; i < config::rollouts; ++i) {
+		rollout_expert_map[i] = get_expert_type(i,0);
+	}
 }
 
 GaussianSampler Expert::get_expert_sampler(const std::vector<double>& state, size_t expert_type, const GaussianSampler& sampler_parent) {
@@ -21,8 +24,9 @@ GaussianSampler Expert::get_expert_sampler(const std::vector<double>& state, siz
 	switch (expert_type) {
 		// Gauss random
 		case 0:
-			expert_sampler.set_covariance(std::vector<double> {0.5,0.5});
+			expert_sampler.set_covariance(std::vector<double> {1,1});
 			expert_sampler.set_mean(std::vector<double> {0,0});
+
 			break;
 		case 1:
 			expert_sampler.set_covariance(std::vector<double> {2,2});
@@ -34,8 +38,11 @@ GaussianSampler Expert::get_expert_sampler(const std::vector<double>& state, siz
 			break;
 		// Gauss and informed by previous
 		case 3:
-			expert_sampler.set_covariance(std::vector<double> {0.5,0.5});
-			expert_sampler.set_mean(std::vector<double> {0,0});
+			static std::mt19937 gen{ std::random_device{}() };
+			static std::normal_distribution<double> ann;
+
+			expert_sampler.set_covariance(std::vector<double> {2,2});
+			expert_sampler.set_mean(std::vector<double> {ann(gen),ann(gen)});
 
 			expert_sampler.combine_dist_mult(sampler_parent);
 			break;
@@ -54,11 +61,76 @@ GaussianSampler Expert::get_expert_sampler(const std::vector<double>& state, siz
 	return expert_sampler;
 }
 
-//Expert Expert_Instance(config::expert_types);
+int Expert::get_expert_from_LOT(size_t rollout){
+	return rollout_expert_map.at(rollout);
+}
+
+size_t Expert::get_expert_type(int rollout, size_t sampling_type) {
+	size_t expert_type_to_return = 0;
+
+	auto n_rollouts = config::rollouts;//ConfigNode["solver"]["rollouts"].as<int>();
+	auto expert_types = config::expert_types;//ConfigNode["solver"]["experts"]["types"].as<std::vector<int>>();
+	auto expert_weights = config::expert_weights;//ConfigNode["solver"]["experts"]["weights"].as<std::vector<double>>();
+
+	assert(expert_types.size() == expert_weights.size());
+	assert(sampling_type == 0 | sampling_type == 1);
+
+	size_t n_experts = expert_weights.size();
+
+	double sum_expert_weights = 0;
+	for (double expert_weight : expert_weights) {
+		sum_expert_weights += expert_weight;
+	}
+
+	std::vector<double> expert_weights_normalized_CDF(expert_weights.size());
+	for (int i = 0; i < expert_weights.size(); ++i) {
+		if (i==0){
+			expert_weights_normalized_CDF[i] = expert_weights[i] / sum_expert_weights;
+		} else {
+			expert_weights_normalized_CDF[i] = expert_weights_normalized_CDF[i-1] + (expert_weights[i] / sum_expert_weights);
+		}
+	}
+
+	// def for LOT
+	double pos_rollout = (double) rollout / (double) n_rollouts;
+	//TODO: Move this such that it is only created once and then directly called!
+	switch (sampling_type) {
+		// LOT (The weights of the different experts are guaranteed to be represented in the final round)
+		case 0:
+			for (int i = 0; i < expert_weights.size(); ++i) {
+				// lower end
+				if (i == 0) {
+					if (pos_rollout < expert_weights_normalized_CDF[i]) {
+						expert_type_to_return = expert_types[i];
+						break;
+					}
+				} else { // other cases
+					if (expert_weights_normalized_CDF[i-1] <= pos_rollout & pos_rollout < expert_weights_normalized_CDF[i]) {
+						expert_type_to_return = expert_types[i];
+						break;
+					}
+				}
+
+			}
+			break;
+
+			// Sampling based on weights
+		case 1:
+			perror("this type of expert sampling is not yet implemented");
+			expert_type_to_return = expert_types[0];
+			break;
+	}
+
+	return expert_type_to_return;
+}
+
+
+//// defining Expert Object outside of Node
+//Expert Expert_Instance;
 
 
 // Node
-Node::Node(const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent, GaussianSampler parent_sampler) : sampler_(2), 	parent_sampler_(2), Expert_Instance(config::expert_types) {
+Node::Node(const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent, const GaussianSampler& parent_sampler) : sampler_(2), parent_sampler_(2), Expert_Instance(){
 	state_ = state;
 	step_ = step;
 
@@ -69,7 +141,7 @@ Node::Node(const std::vector<double> &state, int step, size_t rollout, double co
 
 	// get the expert type depending on the index of the rollout from a LOT
 	//YAML::Node ConfigNode = YAML::LoadFile("./config.yaml");
-	expert_type_ = get_expert_type(rollout_, 0);
+	expert_type_ = Expert_Instance.get_expert_from_LOT(rollout_);
 
 	// call function to calc cost based on state
 	cost_ = get_cost(state_);
@@ -89,48 +161,8 @@ void Node::set_control_input(std::vector<double> control_input) {
 	control_input_ = control_input;
 }
 
-////legacy code!
-//void Node::sample_control_input(std::vector<double> state, int expert_type) {
-//	switch (expert_type) {
-//		// random sampling from uniform distribution
-//		case 0:
-//			control_input_ = {get_random_uniform_double(-1, 1), get_random_uniform_double(-1, 1)};
-//			break;
-//		case 1:
-//			control_input_ = {get_random_uniform_double(-2, 2), get_random_uniform_double(-2, 2)};
-//			break;
-//		case 2:
-//			control_input_ = {get_random_uniform_double(-10, 10), get_random_uniform_double(-10, 10)};
-//		case 3:
-//			control_input_ = {get_random_uniform_double(-10, 10), get_random_uniform_double(-10, 10)};
-//		default:
-//			control_input_ = {get_random_uniform_double(-1, 1), get_random_uniform_double(-1, 1)};;
-//	}
-//
-//}//legacy code!
 
 
-// Sys
-Sys::Sys(std::vector<double> &init_state) {
-	state_ = init_state;
-}
-
-void Sys::apply_control_input(const std::vector<double>& control_input, int timesteps){
-	//TODO: fix this!
-	state_ = sim_system(state_, control_input, timesteps);
-}
-
-std::vector<double> Sys::get_state(){
-	return state_;
-}
-
-int Sys::get_state_dim(){
-	return 6;
-};
-
-int Sys::get_control_dim(){
-	return 2;
-};
 
 
 
