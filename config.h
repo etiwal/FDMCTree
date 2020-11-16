@@ -20,6 +20,8 @@ namespace config {
 	extern std::vector<double> initial_mean;
 	extern std::vector<double> initial_cov;
 
+	extern 	bool use_last_best;
+
 	// - target
 	extern std::vector<double> target_state;
 

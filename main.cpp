@@ -2,7 +2,6 @@
 #include <boost/format.hpp>
 
 #include "functions.h"
-#include "fdmcts.h"
 #include "tree.h"
 #include "logger.h"
 #include "sys_sim.h"
@@ -37,6 +36,7 @@ int main(){
 	std::vector<double> initial_state = config::initial_state;
 
     Sys Robot(initial_state);
+    Trajects trajectories;
 
     extern Expert Expert_Instance();
 
@@ -68,9 +68,17 @@ int main(){
 		std::vector<tree<Node>::iterator> leaf_handles(n_rollouts);
 
 		for (int rollout = 0; rollout < n_rollouts; ++rollout) {
-			GaussianSampler sampler_init(2);
-			auto init_node = sampling_tree.append_child(root, Node(Robot.get_state(), 0, rollout,0, sampler_init));
-			leaf_handles[rollout] = init_node;
+			if (config::use_last_best == true && rollout == 0 && time != 0){
+				auto best_prev_traj_cut = trajectories.get_best_prev_traject_cut(time);
+				auto best_prev_traj_node_current = best_prev_traj_cut.node_vec_[0];
+
+				auto init_node = sampling_tree.append_child(root, Node(Robot.get_state(), 0, rollout,0, best_prev_traj_node_current.sampler_));
+				leaf_handles[rollout] = init_node;
+			} else {
+				GaussianSampler sampler_init(2);
+				auto init_node = sampling_tree.append_child(root, Node(Robot.get_state(), 0, rollout,0, sampler_init));
+				leaf_handles[rollout] = init_node;
+			}
 		}
 
 		for (int step = 0; step < horizon; ++step) {
@@ -95,8 +103,11 @@ int main(){
 			for (int rollout = 0; rollout < n_rollouts; ++rollout) {
 				auto active_rollout = leaf_handles[rollout];
 //				std::cout << "cost of active rollout is " << active_rollout->cost_ << std::endl;
-
-				if (active_rollout->cost_cum_ <= config::pruning_threshold * min_cost) {
+				if (config::use_last_best == true && rollout == 0 && time != 0 && step < horizon-1){
+					leaf_handles_extending.push_back(active_rollout);
+				}
+				// TODO: could be set to 2 times the cost of the value from last iterations best trajectory (implementation in paper)
+				else if(active_rollout->cost_cum_ <= min_cost + (config::pruning_threshold * min_cost)) {
 					leaf_handles_extending.push_back(active_rollout);
 				}
 //			else {
@@ -109,8 +120,22 @@ int main(){
 			for (int rollout = 0; rollout < n_rollouts; ++rollout) {
 				auto active_rollout = leaf_handles[rollout];
 
+				if (config::use_last_best == true && rollout == 0 && time != 0 && step < horizon-1){
+					debug_print(2, boost::format("previous best will be directly extended"));
+
+					auto best_prev_traj_cut = trajectories.get_best_prev_traject_cut(time);
+					auto best_prev_traj_node_current = best_prev_traj_cut.node_vec_[step+1];
+
+					active_rollout->set_control_input(best_prev_traj_node_current.control_input_);
+
+					std::vector<double> next_state = sim_system(active_rollout->state_, active_rollout->control_input_, 1);
+
+					// TODO: Implement Sampler and other important parameters
+					leaf_handles[rollout] = sampling_tree.append_child(active_rollout,
+																	   Node(next_state, step, rollout,active_rollout->cost_cum_, best_prev_traj_node_current.sampler_));
+				}
 				// check if active_rollout is in extendable vector ...
-				if (std::find(leaf_handles_extending.begin(), leaf_handles_extending.end(), active_rollout) !=
+				else if (std::find(leaf_handles_extending.begin(), leaf_handles_extending.end(), active_rollout) !=
 					leaf_handles_extending.end()) {
 					debug_print(2, boost::format("active_rollout will be directly extended"));
 					// based on the state and the control input the system is propagated
@@ -196,6 +221,18 @@ int main(){
 
 		std::vector<int> best_rollout_path(sampling_tree.path_from_iterator(best_leaf_handle, sampling_tree.begin()));
 		auto best_root_handle = sampling_tree.iterator_from_path({0, best_rollout_path[1]}, sampling_tree.begin());
+
+		Traject trajectory(time, 0);
+		for (int i = 0; i < best_rollout_path.size(); ++i) {
+			std::vector<int> sub_path_rollout;
+			for (int j = 0; j <= i; ++j) {
+				sub_path_rollout.push_back(best_rollout_path[j]);
+			}
+			auto current_handle = sampling_tree.iterator_from_path(sub_path_rollout, sampling_tree.begin());
+			trajectory.append(*current_handle);
+		}
+
+		trajectories.append(0,time,trajectory);
 
 		std::cout << std::endl;
 		std::cout << "Winning rollout has final state cost: " << best_leaf_handle->cost_ << std::endl;

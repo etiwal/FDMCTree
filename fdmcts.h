@@ -22,7 +22,7 @@ public:
 
 	std::vector<int> expert_type_list_;
 
-	int get_expert_from_LOT(size_t rollout);
+	int get_expert_from_LUT(size_t rollout);
 
 	GaussianSampler get_expert_sampler(const std::vector<double>& state, size_t expert_type, const GaussianSampler& sampler_parent);
 

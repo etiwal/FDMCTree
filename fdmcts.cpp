@@ -61,7 +61,7 @@ GaussianSampler Expert::get_expert_sampler(const std::vector<double>& state, siz
 	return expert_sampler;
 }
 
-int Expert::get_expert_from_LOT(size_t rollout){
+int Expert::get_expert_from_LUT(size_t rollout){
 	return rollout_expert_map.at(rollout);
 }
 
@@ -130,7 +130,7 @@ size_t Expert::get_expert_type(int rollout, size_t sampling_type) {
 
 
 // Node
-Node::Node(const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent, const GaussianSampler& parent_sampler) : sampler_(2), parent_sampler_(2), Expert_Instance(){
+Node::Node(const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent, const GaussianSampler& parent_sampler) : sampler_(2), parent_sampler_(2){
 	state_ = state;
 	step_ = step;
 
@@ -139,9 +139,12 @@ Node::Node(const std::vector<double> &state, int step, size_t rollout, double co
 
 	cost_cum_parent_ = cost_cum_parent;
 
-	// get the expert type depending on the index of the rollout from a LOT
-	//YAML::Node ConfigNode = YAML::LoadFile("./config.yaml");
-	expert_type_ = Expert_Instance.get_expert_from_LOT(rollout_);
+	if (config::use_last_best == true && rollout == 0 && step == config::horizon-1){
+		auto temp_rollout = get_random_uniform_unsigned(0, config::rollouts-1);
+		expert_type_ = Expert_Instance.get_expert_from_LUT(temp_rollout);
+	} else {
+		expert_type_ = Expert_Instance.get_expert_from_LUT(rollout_);
+	}
 
 	// call function to calc cost based on state
 	cost_ = get_cost(state_);
