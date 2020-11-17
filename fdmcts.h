@@ -38,7 +38,7 @@ private:
 struct Node{
 public:
 //	Node(double state, double control_input, int step, int expert_type, size_t n, size_t parent);
-	Node(const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent, const GaussianSampler& parent_sampler);
+	Node(size_t node_id, const std::vector<size_t>& parent_node_id_path, const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent, const GaussianSampler& parent_sampler);
 	Node() = default;
 	~Node() = default;
 
@@ -50,6 +50,10 @@ public:
 	double cost_;
 	double cost_cum_;
 	double cost_cum_parent_;
+
+	size_t node_id_;
+	std::vector<size_t> parent_node_id_path_;
+	std::vector<size_t> node_id_path_;
 
 	void set_control_input(std::vector<double> control_input);
 

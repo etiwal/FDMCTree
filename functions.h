@@ -29,3 +29,5 @@ std::vector<double> sim_system(std::vector<double> state, std::vector<double> co
 size_t get_expert_type(int rollout, size_t sampling_type);
 
 void debug_print(size_t debug_lv, const boost::format& boost_str);
+
+size_t get_unique_node_id(size_t sim_time, size_t horizon_step, size_t rollout, bool init);

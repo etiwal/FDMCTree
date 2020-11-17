@@ -11,7 +11,7 @@ namespace config
 	int sim_time = 150;
 
 	int rollouts = 20;
-	int horizon = 15;
+	int horizon = 20;
 
 	// - init
 	std::vector<double> initial_state = {0, 0, 0, 0, 0, 0};
@@ -31,7 +31,7 @@ namespace config
 	std::vector<int> expert_types = {0, 1, 2};
 	std::vector<int> expert_weights = {1, 1, 1};
 
-	double pruning_threshold = 0.5;
+	double pruning_threshold = 0.1;
 
 	// Robot
 	int state_dim = 6;

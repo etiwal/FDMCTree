@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include <boost/format.hpp>
 
 #include "functions.h"
@@ -25,7 +26,7 @@ int main(){
 	sim_log.write_endl();
 
 	Logger sampling_log { "sampling_log.txt" };
-	sampling_log.write("simstep", "step","rollout","state_0", "state_1", "state_2", "state_3", "state_4", "state_5", "cost_cum");
+	sampling_log.write("node_id", "simstep", "step","rollout","state_0", "state_1", "state_2", "state_3", "state_4", "state_5", "cost_cum", "path_to_leaf");
 	sampling_log.write_endl();
 
 	//YAML::Node ConfigNode = YAML::LoadFile("./config.yaml");
@@ -61,7 +62,7 @@ int main(){
 
 		// create root of tree
 		GaussianSampler sampler_root(2);
-		auto root = sampling_tree.insert(sampling_tree.begin(), Node(Robot.get_state(), 0, 0, 0, sampler_root));
+		auto root = sampling_tree.insert(sampling_tree.begin(), Node(0, {}, Robot.get_state(), 0, 0, 0, sampler_root));
 
 		std::cout << std::endl;
 		debug_print(2, boost::format("initializing nodes and an array with leaf iterator objects"));
@@ -72,11 +73,14 @@ int main(){
 				auto best_prev_traj_cut = trajectories.get_best_prev_traject_cut(time);
 				auto best_prev_traj_node_current = best_prev_traj_cut.node_vec_[0];
 
-				auto init_node = sampling_tree.append_child(root, Node(Robot.get_state(), 0, rollout,0, best_prev_traj_node_current.sampler_));
+				auto node_id = get_unique_node_id(0,0,rollout,true);
+				auto init_node = sampling_tree.append_child(root, Node(node_id, root->node_id_path_, Robot.get_state(), 0, rollout,0, best_prev_traj_node_current.sampler_));
 				leaf_handles[rollout] = init_node;
 			} else {
 				GaussianSampler sampler_init(2);
-				auto init_node = sampling_tree.append_child(root, Node(Robot.get_state(), 0, rollout,0, sampler_init));
+
+				auto node_id = get_unique_node_id(0,0,rollout,true);
+				auto init_node = sampling_tree.append_child(root, Node(node_id, root->node_id_path_, Robot.get_state(), 0, rollout,0, sampler_init));
 				leaf_handles[rollout] = init_node;
 			}
 		}
@@ -131,8 +135,9 @@ int main(){
 					std::vector<double> next_state = sim_system(active_rollout->state_, active_rollout->control_input_, 1);
 
 					// TODO: Implement Sampler and other important parameters
+					auto node_id = get_unique_node_id(time,step,rollout,false);
 					leaf_handles[rollout] = sampling_tree.append_child(active_rollout,
-																	   Node(next_state, step, rollout,active_rollout->cost_cum_, best_prev_traj_node_current.sampler_));
+																	   Node(node_id, active_rollout->node_id_path_,next_state, step, rollout,active_rollout->cost_cum_, best_prev_traj_node_current.sampler_));
 				}
 				// check if active_rollout is in extendable vector ...
 				else if (std::find(leaf_handles_extending.begin(), leaf_handles_extending.end(), active_rollout) !=
@@ -149,8 +154,10 @@ int main(){
 					active_rollout->set_control_input(control_input);
 
 					std::vector<double> next_state = sim_system(active_rollout->state_, active_rollout->control_input_, 1);
+
+					auto node_id = get_unique_node_id(time,step,rollout,false);
 					leaf_handles[rollout] = sampling_tree.append_child(active_rollout,
-																	   Node(next_state, step, rollout,active_rollout->cost_cum_, active_rollout->sampler_));
+																	   Node(node_id, active_rollout->node_id_path_, next_state, step, rollout,active_rollout->cost_cum_, active_rollout->sampler_));
 				} else {
 					unsigned random_unsigned = get_random_uniform_unsigned(0, leaf_handles_extending.size()-1);
 
@@ -168,15 +175,30 @@ int main(){
 
 					// based on the state and the control input the system is propagated
 					std::vector<double> next_state = sim_system(extending_leaf->state_, active_rollout->control_input_, 1);
+
+					auto node_id = get_unique_node_id(time,step,rollout,false);
 					leaf_handles[rollout] = sampling_tree.append_child(extending_leaf,
-																	   Node(next_state, step, rollout, extending_leaf->cost_cum_, extending_leaf->sampler_));
+																	   Node(node_id, extending_leaf->node_id_path_, next_state, step, rollout, extending_leaf->cost_cum_, extending_leaf->sampler_));
 
 				}
 
 			}
 			if (config::log_sampling==true){
 				for (int i = 0; i < leaf_handles.size(); ++i) {
-					sampling_log.write(time, step,i,leaf_handles[i]->state_[0],leaf_handles[i]->state_[1],leaf_handles[i]->state_[2],leaf_handles[i]->state_[3],leaf_handles[i]->state_[4],leaf_handles[i]->state_[5], leaf_handles[i]->cost_cum_);
+					std::string path_to_leaf_str;
+					std::vector<size_t> node_id_path = leaf_handles[i]->node_id_path_;
+					for (int path_step = 0; path_step < node_id_path.size(); ++path_step) {
+						path_to_leaf_str.append(std::to_string(node_id_path[path_step]));
+						if (path_step != node_id_path.size()-1){
+							std::string seperator = ";";
+							path_to_leaf_str.append(seperator);
+						}
+					}
+//					// declaring character array : p
+//					char path_to_leaf_char[path_to_leaf_str.length()+1];
+//					for (i = 0; i < sizeof(path_to_leaf_char); i++) {path_to_leaf_char[i] = path_to_leaf_str[i];}
+
+					sampling_log.write(leaf_handles[i]->node_id_, time, step,i,leaf_handles[i]->state_[0],leaf_handles[i]->state_[1],leaf_handles[i]->state_[2],leaf_handles[i]->state_[3],leaf_handles[i]->state_[4],leaf_handles[i]->state_[5], leaf_handles[i]->cost_cum_, path_to_leaf_str);
 					sampling_log.write_endl();
 				}
 			}

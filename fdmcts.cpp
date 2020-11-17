@@ -130,9 +130,15 @@ size_t Expert::get_expert_type(int rollout, size_t sampling_type) {
 
 
 // Node
-Node::Node(const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent, const GaussianSampler& parent_sampler) : sampler_(2), parent_sampler_(2){
+Node::Node(size_t node_id, const std::vector<size_t>& parent_node_id_path, const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent, const GaussianSampler& parent_sampler) : sampler_(2), parent_sampler_(2){
 	state_ = state;
 	step_ = step;
+
+	node_id_ = node_id;
+	parent_node_id_path_ = parent_node_id_path;
+
+	node_id_path_ = parent_node_id_path_;
+	node_id_path_.push_back(node_id_);
 
 	rollout_ = rollout;
 	control_input_ = {0, 0};

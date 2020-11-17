@@ -66,3 +66,19 @@ void debug_print(size_t debug_lv, const boost::format& boost_str){
 		std::cout << boost_str.str() << std::endl;
 	}
 };
+
+size_t get_unique_node_id(size_t sim_time, size_t horizon_step, size_t rollout, bool init){
+	auto rootsize = 1;
+	size_t unique_node_id = 0;
+
+	unique_node_id += rootsize;
+
+	if (!init){
+		unique_node_id += config::rollouts+rootsize;
+	}
+
+	unique_node_id += (sim_time*config::horizon*config::rollouts) + (horizon_step*config::rollouts) + rollout;
+
+
+	return unique_node_id;
+}
