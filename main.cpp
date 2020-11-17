@@ -16,9 +16,9 @@
 int main(){
 	// Init Logging
 	Logger config_log { "config_log.txt" };
-	config_log.write("sim_time", "rollouts", "horizon", "obstacle_cost", "obstacle_rad_0", "obstacle_rad_1", "obstacle_rad_2","obstacle_rad_3", "obstacle_pos_0_x","obstacle_pos_0_y", "obstacle_pos_1_x","obstacle_pos_1_y", "obstacle_pos_2_x","obstacle_pos_2_y", "obstacle_pos_3_x","obstacle_pos_3_y", "target_state_0", "target_state_1");
+	config_log.write("sim_time", "rollouts", "horizon", "obstacle_cost", "use_occupancy_grid", "grid_path", "obstacle_rad_0", "obstacle_rad_1", "obstacle_rad_2","obstacle_rad_3", "obstacle_pos_0_x","obstacle_pos_0_y", "obstacle_pos_1_x","obstacle_pos_1_y", "obstacle_pos_2_x","obstacle_pos_2_y", "obstacle_pos_3_x","obstacle_pos_3_y", "start_state_0", "start_state_1","target_state_0", "target_state_1");
 	config_log.write_endl();
-	config_log.write(config::sim_time, config::rollouts, config::horizon, config::obstacle_cost, config::obstacle_rad[0],config::obstacle_rad[1],config::obstacle_rad[2],config::obstacle_rad[3], config::obstacle_pos[0],config::obstacle_pos[1],config::obstacle_pos[2],config::obstacle_pos[3],config::obstacle_pos[4],config::obstacle_pos[5],config::obstacle_pos[6],config::obstacle_pos[7],config::target_state[0],config::target_state[1]);
+	config_log.write(config::sim_time, config::rollouts, config::horizon, config::obstacle_cost, config::use_occupancy_grid, config::grid_path, config::obstacle_rad[0],config::obstacle_rad[1],config::obstacle_rad[2],config::obstacle_rad[3], config::obstacle_pos[0],config::obstacle_pos[1],config::obstacle_pos[2],config::obstacle_pos[3],config::obstacle_pos[4],config::obstacle_pos[5],config::obstacle_pos[6],config::obstacle_pos[7],config::initial_state[0], config::initial_state[1], config::target_state[0],config::target_state[1]);
 	config_log.write_endl();
 
 	Logger sim_log { "sim_log.txt" };
@@ -62,7 +62,7 @@ int main(){
 
 		// create root of tree
 		GaussianSampler sampler_root(2);
-		auto root = sampling_tree.insert(sampling_tree.begin(), Node(0, {}, Robot.get_state(), 0, 0, 0, sampler_root));
+		auto root = sampling_tree.insert(sampling_tree.begin(), Node(0, {{}}, Robot.get_state(), 0, 0, 0, sampler_root));
 
 		std::cout << std::endl;
 		debug_print(2, boost::format("initializing nodes and an array with leaf iterator objects"));
@@ -132,7 +132,7 @@ int main(){
 
 					active_rollout->set_control_input(best_prev_traj_node_current.control_input_);
 
-					std::vector<double> next_state = sim_system(active_rollout->state_, active_rollout->control_input_, 1);
+					std::vector<double> next_state = Robot.sim_virtual_system(active_rollout->state_, active_rollout->control_input_, 1);
 
 					// TODO: Implement Sampler and other important parameters
 					auto node_id = get_unique_node_id(time,step,rollout,false);
@@ -153,7 +153,7 @@ int main(){
 
 					active_rollout->set_control_input(control_input);
 
-					std::vector<double> next_state = sim_system(active_rollout->state_, active_rollout->control_input_, 1);
+					std::vector<double> next_state = Robot.sim_virtual_system(active_rollout->state_, active_rollout->control_input_, 1);
 
 					auto node_id = get_unique_node_id(time,step,rollout,false);
 					leaf_handles[rollout] = sampling_tree.append_child(active_rollout,
@@ -174,7 +174,7 @@ int main(){
 
 
 					// based on the state and the control input the system is propagated
-					std::vector<double> next_state = sim_system(extending_leaf->state_, active_rollout->control_input_, 1);
+					std::vector<double> next_state = Robot.sim_virtual_system(extending_leaf->state_, active_rollout->control_input_, 1);
 
 					auto node_id = get_unique_node_id(time,step,rollout,false);
 					leaf_handles[rollout] = sampling_tree.append_child(extending_leaf,
@@ -235,9 +235,16 @@ int main(){
 		auto best_leaf_handle = leaf_handles[0];
 		for (int rollout = 0; rollout < n_rollouts; ++rollout) {
 			auto active_rollout = leaf_handles[rollout];
-			if (active_rollout->cost_ < min_cost) {
-				min_cost = active_rollout->cost_;
-				best_leaf_handle = leaf_handles[rollout];
+			if (config::use_cum_cost){
+				if (active_rollout->cost_cum_ < min_cost) {
+					min_cost = active_rollout->cost_cum_;
+					best_leaf_handle = leaf_handles[rollout];
+				}
+			} else {
+				if (active_rollout->cost_ < min_cost) {
+					min_cost = active_rollout->cost_;
+					best_leaf_handle = leaf_handles[rollout];
+				}
 			}
 		}
 

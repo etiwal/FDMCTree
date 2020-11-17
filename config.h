@@ -7,6 +7,7 @@
 
 
 #include <vector>
+#include <string>
 
 namespace config {
 	// Simulation
@@ -15,12 +16,20 @@ namespace config {
 	extern int rollouts;
 	extern int horizon;
 
+	// implementation
+	extern bool use_cum_cost;
+	extern bool use_last_best;
+
+	// collision grid
+	extern bool use_occupancy_grid;
+	extern const char *grid_path;
+	extern size_t grid_height;
+	extern size_t grid_width;
+
 	// - init
 	extern std::vector<double> initial_state;
 	extern std::vector<double> initial_mean;
 	extern std::vector<double> initial_cov;
-
-	extern 	bool use_last_best;
 
 	// - target
 	extern std::vector<double> target_state;

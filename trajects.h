@@ -3,9 +3,7 @@
 //
 
 #ifndef MCSAMPLING_TRAJECTS_H
-#define MCSAMPLING_TRAJECTS_H
 
-#endif //MCSAMPLING_TRAJECTS_H
 
 #include <vector>
 #include <unordered_map>
@@ -42,3 +40,6 @@ public:
 private:
 	std::unordered_map<size_t, std::unordered_map<size_t, Traject>> trajectories_;
 };
+
+#define MCSAMPLING_TRAJECTS_H
+#endif //MCSAMPLING_TRAJECTS_H

@@ -126,8 +126,7 @@ size_t Expert::get_expert_type(int rollout, size_t sampling_type) {
 
 
 //// defining Expert Object outside of Node
-//Expert Expert_Instance;
-
+Expert Expert_Instance;
 
 // Node
 Node::Node(size_t node_id, const std::vector<size_t>& parent_node_id_path, const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent, const GaussianSampler& parent_sampler) : sampler_(2), parent_sampler_(2){

@@ -8,8 +8,7 @@
 #endif //MCSAMPLING_SYS_SIM_H
 
 #include <vector>
-
-#include "functions.h"
+#include "config.h"
 
 struct Sys{
 public:
@@ -26,4 +25,6 @@ public:
 	void apply_control_input(const std::vector<double>& control_input, int timesteps);
 
 	std::vector<double> get_state();
+
+	std::vector<double> sim_virtual_system(std::vector<double> state, std::vector<double> control_input, double timesteps);
 };

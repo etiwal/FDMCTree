@@ -3,9 +3,6 @@
 //
 
 #ifndef MCSAMPLING_FDMCTS_H
-#define MCSAMPLING_FDMCTS_H
-
-#endif //MCSAMPLING_FDMCTS_H
 
 #include <cstddef>
 #include <vector>
@@ -62,7 +59,8 @@ public:
 	//TODO: Make it work with private object.
 	GaussianSampler parent_sampler_;
 	GaussianSampler sampler_;
-	Expert Expert_Instance;
 };
 
 
+#define MCSAMPLING_FDMCTS_H
+#endif //MCSAMPLING_FDMCTS_H
