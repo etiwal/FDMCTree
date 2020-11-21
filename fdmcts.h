@@ -30,7 +30,7 @@ private:
 };
 
 //// defining Expert Object outside of Node
-//Expert Expert_Instance;
+extern Expert Expert_Instance;
 
 struct Node{
 public:

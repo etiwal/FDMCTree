@@ -14,7 +14,7 @@ namespace config
 	int horizon = 20;
 
 	// implementation
-	bool use_cum_cost = false;
+	bool use_cum_cost = true;
 	bool use_last_best = true;
 
 	// collision grid

@@ -39,8 +39,6 @@ int main(){
     Sys Robot(initial_state);
     Trajects trajectories;
 
-    extern Expert Expert_Instance();
-
 	for (int time = 0; time < config::sim_time; ++time) {
 		// generate rollouts
 		// init tree and root
