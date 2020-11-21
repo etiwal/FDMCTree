@@ -9,7 +9,7 @@
 #include <random>
 #include <boost/format.hpp>
 
-#include "tree.h"
+#include "../lib/tree.h"
 
 #include "config.h"
 

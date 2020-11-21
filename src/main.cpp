@@ -3,7 +3,7 @@
 #include <boost/format.hpp>
 
 #include "functions.h"
-#include "tree.h"
+#include "../lib/tree.h"
 #include "logger.h"
 #include "sys_sim.h"
 #include "trajects.h"
@@ -38,6 +38,13 @@ int main(){
 
     Sys Robot(initial_state);
     Trajects trajectories;
+
+    // correct way!
+    extern Expert Expert_Instance;
+	// correct way!
+
+	// check if it works:
+	//Expert_Instance.expert_type_list_;
 
 	for (int time = 0; time < config::sim_time; ++time) {
 		// generate rollouts
@@ -145,7 +152,8 @@ int main(){
 
 //					active_rollout->sample_control_input(active_rollout->state_, active_rollout->expert_type_);
 					std::vector<double> control_input(2);
-					auto sampled_control_input = active_rollout->sampler_.get_sample();
+					//auto sampled_control_input = active_rollout->sampler_.get_sample();
+					auto sampled_control_input = Expert_Instance.get_sample(active_rollout->expert_type_, active_rollout->rollout_, active_rollout->state_);
 					control_input[0] = sampled_control_input(0,0);
 					control_input[1] = sampled_control_input(1,0);
 
@@ -164,7 +172,8 @@ int main(){
 
 //					active_rollout->sample_control_input(extending_leaf->state_, active_rollout->expert_type_);
 					std::vector<double> control_input(2);
-					auto sampled_control_input = active_rollout->sampler_.get_sample();
+					//auto sampled_control_input = active_rollout->sampler_.get_sample();
+					auto sampled_control_input = Expert_Instance.get_sample(active_rollout->expert_type_, active_rollout->rollout_, active_rollout->state_);
 					control_input[0] = sampled_control_input(0,0);
 					control_input[1] = sampled_control_input(1,0);
 

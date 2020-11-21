@@ -36,8 +36,8 @@ namespace config
 	std::vector<int> obstacle_rad = {10, 5, 10, 5};
 	std::vector<int> obstacle_pos = {5, 20, 55, 15, 40, 20, 80, 40};
 
-	std::vector<int> expert_types = {0, 1, 2};
-	std::vector<int> expert_weights = {1, 1, 1};
+	std::vector<int> expert_types = {0, 1};
+	std::vector<int> expert_weights = {1, 1};
 
 	double pruning_threshold = 0.5;
 

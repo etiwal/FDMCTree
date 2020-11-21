@@ -1,12 +1,8 @@
 //
-// Created by etienne on 27.10.20.
+// Created by etienne on 21.11.20.
 //
 
-#include "fdmcts.h"
-
-#include <iostream>
-#include <random>
-#include <ctime>
+#include "expert.h"
 
 // Expert
 Expert::Expert() {
@@ -14,6 +10,9 @@ Expert::Expert() {
 	for (size_t i = 0; i < config::rollouts; ++i) {
 		rollout_expert_map[i] = get_expert_type(i,0);
 	}
+
+	experts[0] = new NormExp;
+	experts[1] = new ImpExp;
 }
 
 GaussianSampler Expert::get_expert_sampler(const std::vector<double>& state, size_t expert_type, const GaussianSampler& sampler_parent) {
@@ -36,7 +35,7 @@ GaussianSampler Expert::get_expert_sampler(const std::vector<double>& state, siz
 			expert_sampler.set_covariance(std::vector<double> {10,10});
 			expert_sampler.set_mean(std::vector<double> {0,0});
 			break;
-		// Gauss and informed by previous
+			// Gauss and informed by previous
 		case 3:
 			static std::mt19937 gen{ std::random_device{}() };
 			static std::normal_distribution<double> ann;
@@ -124,54 +123,11 @@ size_t Expert::get_expert_type(int rollout, size_t sampling_type) {
 	return expert_type_to_return;
 }
 
+Eigen::MatrixXd Expert::get_sample(size_t expert_type, size_t step, const std::vector<double>& state) {
+	return experts[expert_type]->get_sample(step, state);
+}
 
+// correct way!
 //// defining Expert Object outside of Node
 Expert Expert_Instance;
-
-// Node
-Node::Node(size_t node_id, const std::vector<size_t>& parent_node_id_path, const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent, const GaussianSampler& parent_sampler) : sampler_(2), parent_sampler_(2){
-	state_ = state;
-	step_ = step;
-
-	node_id_ = node_id;
-	parent_node_id_path_ = parent_node_id_path;
-
-	node_id_path_ = parent_node_id_path_;
-	node_id_path_.push_back(node_id_);
-
-	rollout_ = rollout;
-	control_input_ = {0, 0};
-
-	cost_cum_parent_ = cost_cum_parent;
-
-	if (config::use_last_best == true && rollout == 0 && step == config::horizon-1){
-		auto temp_rollout = get_random_uniform_unsigned(0, config::rollouts-1);
-		expert_type_ = Expert_Instance.get_expert_from_LUT(temp_rollout);
-	} else {
-		expert_type_ = Expert_Instance.get_expert_from_LUT(rollout_);
-	}
-
-	// call function to calc cost based on state
-	cost_ = get_cost(state_);
-	cost_cum_ = cost_cum_parent_ + cost_;
-
-	parent_sampler_ = parent_sampler;
-
-	// set intial mean and covariance
-	sampler_ = Expert_Instance.get_expert_sampler(state_, expert_type_, parent_sampler_);
-}
-
-void Node::set_expert_type_manually(size_t expert_type){
-	expert_type_ = expert_type;
-}
-
-void Node::set_control_input(std::vector<double> control_input) {
-	control_input_ = control_input;
-}
-
-
-
-
-
-
-
+// correct way!

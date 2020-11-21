@@ -2,7 +2,8 @@
 // Created by etienne on 27.10.20.
 //
 
-#ifndef MCSAMPLING_FDMCTS_H
+#ifndef MCSAMPLING_NODE_H
+#define MCSAMPLING_NODE_H
 
 #include <cstddef>
 #include <vector>
@@ -11,26 +12,9 @@
 
 #include "functions.h"
 #include "gaussian_sampler.h"
+#include "expert.h"
 
-class Expert{
-public:
-	Expert();
-	~Expert() = default;
 
-	std::vector<int> expert_type_list_;
-
-	int get_expert_from_LUT(size_t rollout);
-
-	GaussianSampler get_expert_sampler(const std::vector<double>& state, size_t expert_type, const GaussianSampler& sampler_parent);
-
-private:
-	std::map<size_t, int> rollout_expert_map;
-	static size_t get_expert_type(int rollout, size_t sampling_type);
-
-};
-
-//// defining Expert Object outside of Node
-extern Expert Expert_Instance;
 
 struct Node{
 public:
@@ -62,5 +46,5 @@ public:
 };
 
 
-#define MCSAMPLING_FDMCTS_H
-#endif //MCSAMPLING_FDMCTS_H
+
+#endif //MCSAMPLING_NODE_H
