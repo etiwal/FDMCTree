@@ -16,7 +16,7 @@ class ExpertBase{
 public:
 	ExpertBase() = default;
 	~ExpertBase() = default;
-	//virtual void update_expert();
+	virtual void update_expert()=0;
 	virtual Eigen::MatrixXd get_sample(size_t step, std::vector<double> state)=0;
 
 

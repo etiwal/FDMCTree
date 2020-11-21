@@ -15,3 +15,7 @@ NormExp::NormExp() : expert_sampler_one_(config::control_dim){
 Eigen::MatrixXd NormExp::get_sample(size_t step, std::vector<double> state) {
 	return expert_sampler_one_.get_sample();
 }
+
+void NormExp::update_expert(){
+	// do nothing
+}

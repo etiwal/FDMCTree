@@ -18,3 +18,7 @@ Eigen::MatrixXd ImpExp::get_sample(size_t step, std::vector<double> state) {
 	return experet_sampler_map_[step].get_sample();
 }
 
+void ImpExp::update_expert() {
+	// calc exp weights etc
+}
+

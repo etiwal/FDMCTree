@@ -11,8 +11,8 @@ Expert::Expert() {
 		rollout_expert_map[i] = get_expert_type(i,0);
 	}
 
-	experts[0] = new NormExp;
-	experts[1] = new ImpExp;
+	experts_[0] = new NormExp;
+	experts_[1] = new ImpExp;
 }
 
 GaussianSampler Expert::get_expert_sampler(const std::vector<double>& state, size_t expert_type, const GaussianSampler& sampler_parent) {
@@ -124,7 +124,17 @@ size_t Expert::get_expert_type(int rollout, size_t sampling_type) {
 }
 
 Eigen::MatrixXd Expert::get_sample(size_t expert_type, size_t step, const std::vector<double>& state) {
-	return experts[expert_type]->get_sample(step, state);
+	return experts_[expert_type]->get_sample(step, state);
+}
+
+void Expert::update_expert(size_t expert_type) {
+	experts_[expert_type]->update_expert();
+}
+
+void Expert::update_experts() {
+	for (auto &&expert_ptr : experts_){
+		experts_[expert_ptr.first]->update_expert();
+	}
 }
 
 // correct way!

@@ -30,12 +30,16 @@ public:
 
 	Eigen::MatrixXd get_sample(size_t expert_type, size_t step, const std::vector<double>& state);
 
+	void update_expert(size_t expert_type);
+
+	void update_experts();
+
 private:
 	std::map<size_t, int> rollout_expert_map;
 	static size_t get_expert_type(int rollout, size_t sampling_type);
 
 	// create experts
-	std::map<size_t, ExpertBase*> experts;
+	std::map<size_t, ExpertBase*> experts_;
 };
 
 #endif //MCSAMPLING_EXPERT_H

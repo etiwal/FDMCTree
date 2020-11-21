@@ -66,8 +66,7 @@ int main(){
 
 
 		// create root of tree
-		GaussianSampler sampler_root(2);
-		auto root = sampling_tree.insert(sampling_tree.begin(), Node(0, {{}}, Robot.get_state(), 0, 0, 0, sampler_root));
+		auto root = sampling_tree.insert(sampling_tree.begin(), Node(0, {{}}, Robot.get_state(), 0, 0, 0));
 
 		std::cout << std::endl;
 		debug_print(2, boost::format("initializing nodes and an array with leaf iterator objects"));
@@ -79,13 +78,11 @@ int main(){
 				auto best_prev_traj_node_current = best_prev_traj_cut.node_vec_[0];
 
 				auto node_id = get_unique_node_id(0,0,rollout,true);
-				auto init_node = sampling_tree.append_child(root, Node(node_id, root->node_id_path_, Robot.get_state(), 0, rollout,0, best_prev_traj_node_current.sampler_));
+				auto init_node = sampling_tree.append_child(root, Node(node_id, root->node_id_path_, Robot.get_state(), 0, rollout,0));
 				leaf_handles[rollout] = init_node;
 			} else {
-				GaussianSampler sampler_init(2);
-
 				auto node_id = get_unique_node_id(0,0,rollout,true);
-				auto init_node = sampling_tree.append_child(root, Node(node_id, root->node_id_path_, Robot.get_state(), 0, rollout,0, sampler_init));
+				auto init_node = sampling_tree.append_child(root, Node(node_id, root->node_id_path_, Robot.get_state(), 0, rollout,0));
 				leaf_handles[rollout] = init_node;
 			}
 		}
@@ -142,7 +139,7 @@ int main(){
 					// TODO: Implement Sampler and other important parameters
 					auto node_id = get_unique_node_id(time,step,rollout,false);
 					leaf_handles[rollout] = sampling_tree.append_child(active_rollout,
-																	   Node(node_id, active_rollout->node_id_path_,next_state, step, rollout,active_rollout->cost_cum_, best_prev_traj_node_current.sampler_));
+																	   Node(node_id, active_rollout->node_id_path_,next_state, step, rollout,active_rollout->cost_cum_));
 				}
 				// check if active_rollout is in extendable vector ...
 				else if (std::find(leaf_handles_extending.begin(), leaf_handles_extending.end(), active_rollout) !=
@@ -163,7 +160,7 @@ int main(){
 
 					auto node_id = get_unique_node_id(time,step,rollout,false);
 					leaf_handles[rollout] = sampling_tree.append_child(active_rollout,
-																	   Node(node_id, active_rollout->node_id_path_, next_state, step, rollout,active_rollout->cost_cum_, active_rollout->sampler_));
+																	   Node(node_id, active_rollout->node_id_path_, next_state, step, rollout,active_rollout->cost_cum_));
 				} else {
 					unsigned random_unsigned = get_random_uniform_unsigned(0, leaf_handles_extending.size()-1);
 
@@ -185,7 +182,7 @@ int main(){
 
 					auto node_id = get_unique_node_id(time,step,rollout,false);
 					leaf_handles[rollout] = sampling_tree.append_child(extending_leaf,
-																	   Node(node_id, extending_leaf->node_id_path_, next_state, step, rollout, extending_leaf->cost_cum_, extending_leaf->sampler_));
+																	   Node(node_id, extending_leaf->node_id_path_, next_state, step, rollout, extending_leaf->cost_cum_));
 
 				}
 
@@ -278,6 +275,8 @@ int main(){
 
 		sim_log.write(time+1, Robot.get_state()[0], Robot.get_state()[1], Robot.get_state()[2], Robot.get_state()[3], Robot.get_state()[4], Robot.get_state()[5]);
 		sim_log.write_endl();
+
+		Expert_Instance.update_experts();
 	}
 
 

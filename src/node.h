@@ -19,7 +19,7 @@
 struct Node{
 public:
 //	Node(double state, double control_input, int step, int expert_type, size_t n, size_t parent);
-	Node(size_t node_id, const std::vector<size_t>& parent_node_id_path, const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent, const GaussianSampler& parent_sampler);
+	Node(size_t node_id, const std::vector<size_t>& parent_node_id_path, const std::vector<double> &state, int step, size_t rollout, double cost_cum_parent);
 	Node() = default;
 	~Node() = default;
 
@@ -39,10 +39,6 @@ public:
 	void set_control_input(std::vector<double> control_input);
 
 	void set_expert_type_manually(size_t expert_type);
-
-	//TODO: Make it work with private object.
-	GaussianSampler parent_sampler_;
-	GaussianSampler sampler_;
 };
 
 
