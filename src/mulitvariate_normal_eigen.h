@@ -5,7 +5,7 @@
 #ifndef MCSAMPLING_MULITVARIATE_NORMAL_EIGEN_H
 #define MCSAMPLING_MULITVARIATE_NORMAL_EIGEN_H
 
-#endif //MCSAMPLING_MULITVARIATE_NORMAL_EIGEN_H
+
 
 /*!
  * @file     multivariate_normal_eigen.h
@@ -78,3 +78,4 @@ struct multivariate_normal {
 //	}
 };
 
+#endif //MCSAMPLING_MULITVARIATE_NORMAL_EIGEN_H

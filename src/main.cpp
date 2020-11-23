@@ -6,7 +6,8 @@
 #include "../lib/tree.h"
 #include "logger.h"
 #include "sys_sim.h"
-#include "trajects.h"
+#include "impfunctions.h"
+
 
 //#include "matplotlibcpp.h"
 //#include <cmath>
@@ -74,7 +75,7 @@ int main(){
 
 		for (int rollout = 0; rollout < n_rollouts; ++rollout) {
 			if (config::use_last_best == true && rollout == 0 && time != 0){
-				auto best_prev_traj_cut = trajectories.get_best_prev_traject_cut(time);
+				auto best_prev_traj_cut = trajectories.get_best_traject_cut(time-1);
 				auto best_prev_traj_node_current = best_prev_traj_cut.node_vec_[0];
 
 				auto node_id = get_unique_node_id(0,0,rollout,true);
@@ -129,7 +130,7 @@ int main(){
 				if (config::use_last_best == true && rollout == 0 && time != 0 && step < horizon-1){
 					debug_print(2, boost::format("previous best will be directly extended"));
 
-					auto best_prev_traj_cut = trajectories.get_best_prev_traject_cut(time);
+					auto best_prev_traj_cut = trajectories.get_best_traject_cut(time-1);
 					auto best_prev_traj_node_current = best_prev_traj_cut.node_vec_[step+1];
 
 					active_rollout->set_control_input(best_prev_traj_node_current.control_input_);
@@ -233,50 +234,94 @@ int main(){
 			}
 		}
 
-
-		// get the min control input of the generated child with the lowest simulated cost
-		double min_cost = std::numeric_limits<double>::max();
-		auto best_leaf_handle = leaf_handles[0];
-		for (int rollout = 0; rollout < n_rollouts; ++rollout) {
-			auto active_rollout = leaf_handles[rollout];
+		// sort multimap according to lowest cost
+		std::multimap<double, size_t> sorted_leaf_idx = {};
+		for (int leaf_idx = 0; leaf_idx < leaf_handles.size(); ++leaf_idx) {
 			if (config::use_cum_cost){
-				if (active_rollout->cost_cum_ < min_cost) {
-					min_cost = active_rollout->cost_cum_;
-					best_leaf_handle = leaf_handles[rollout];
-				}
+				sorted_leaf_idx.insert(std::pair<double, size_t>(leaf_handles[leaf_idx]->cost_cum_, leaf_idx));
 			} else {
-				if (active_rollout->cost_ < min_cost) {
-					min_cost = active_rollout->cost_;
-					best_leaf_handle = leaf_handles[rollout];
-				}
+				sorted_leaf_idx.insert(std::pair<double, size_t>(leaf_handles[leaf_idx]->cost_, leaf_idx));
 			}
 		}
+
+		// build Trajectories object (for one timestep and max length (horizon))
+		size_t idx_rank = 0;
+		for (auto cost_key : sorted_leaf_idx) {
+			auto current_leaf_handle = leaf_handles[cost_key.second];
+
+			std::vector<int> rollout_path(sampling_tree.path_from_iterator(current_leaf_handle, sampling_tree.begin()));
+			auto root_handle = sampling_tree.iterator_from_path({0, rollout_path[1]}, sampling_tree.begin());
+
+			Traject trajectory(time);
+			for (int i = 0; i < rollout_path.size(); ++i) {
+				std::vector<int> sub_path_rollout;
+				for (int j = 0; j <= i; ++j) {
+					sub_path_rollout.push_back(rollout_path[j]);
+				}
+				auto current_handle = sampling_tree.iterator_from_path(sub_path_rollout, sampling_tree.begin());
+				trajectory.append(*current_handle);
+			}
+			trajectories.append(idx_rank,time,trajectory);
+
+			idx_rank++;
+		}
+
+		// OLD! get first element of Trajectories Object
+		auto best_leaf_handle = leaf_handles[sorted_leaf_idx.begin()->second];
 
 		std::vector<int> best_rollout_path(sampling_tree.path_from_iterator(best_leaf_handle, sampling_tree.begin()));
 		auto best_root_handle = sampling_tree.iterator_from_path({0, best_rollout_path[1]}, sampling_tree.begin());
 
-		Traject trajectory(time, 0);
-		for (int i = 0; i < best_rollout_path.size(); ++i) {
-			std::vector<int> sub_path_rollout;
-			for (int j = 0; j <= i; ++j) {
-				sub_path_rollout.push_back(best_rollout_path[j]);
-			}
-			auto current_handle = sampling_tree.iterator_from_path(sub_path_rollout, sampling_tree.begin());
-			trajectory.append(*current_handle);
-		}
 
-		trajectories.append(0,time,trajectory);
 
+		// print winning leaf
 		std::cout << std::endl;
-		std::cout << "Winning rollout has final state cost: " << best_leaf_handle->cost_ << std::endl;
+		std::cout << "Winning rollout has cost of: " << best_leaf_handle->cost_ << std::endl;
 		std::cout << "Control input (" << best_root_handle->control_input_[0] << ", " << best_root_handle->control_input_[1] <<") is applied to Robot" << std::endl;
+
+		// Apply first control input to robot
 		Robot.apply_control_input(best_root_handle->control_input_, 1);
+
+		// print result of applied input
 		std::cout << "Robot moved to position (" << Robot.get_state()[0] << ", " << Robot.get_state()[1] << "), Target was: (" << config::target_state[0] << ", " << config::target_state[1] << ")" << std::endl;
 
 		sim_log.write(time+1, Robot.get_state()[0], Robot.get_state()[1], Robot.get_state()[2], Robot.get_state()[3], Robot.get_state()[4], Robot.get_state()[5]);
 		sim_log.write_endl();
 
-		Expert_Instance.update_experts();
+		if (config::use_imp_sampling) {
+
+			// SHOULD NOT BE HERE! calc exponentiated cost
+			Eigen::MatrixXd means_imp = Eigen::MatrixXd::Zero(config::control_dim, config::horizon);
+			for (int j = 0; j < config::horizon; ++j) {
+				Eigen::ArrayXd means_one_hor_step = Eigen::ArrayXd::Zero(config::control_dim);
+				Eigen::ArrayXd costs_one_hor_step = Eigen::ArrayXd::Zero(config::rollouts);
+				for (int i = 0; i < config::rollouts; ++i) {
+					if (config::use_cum_cost_for_imp_sampling) {
+						costs_one_hor_step[i] = trajectories.trajectories_[time].at(i).node_vec_[j + 1].cost_cum_;
+					} else {
+						costs_one_hor_step[i] = trajectories.trajectories_[time].at(i).node_vec_[j + 1].cost_;
+					}
+				}
+
+				Eigen::ArrayXd omegas_one_hor_step = Eigen::ArrayXd::Zero(config::rollouts);
+				omegas_one_hor_step = get_omegas(costs_one_hor_step);
+
+
+				for (int input = 0; input < config::control_dim; ++input) {
+					double mean = 0;
+					for (int i = 0; i < config::rollouts; ++i) {
+						mean += omegas_one_hor_step[i] *
+								trajectories.trajectories_[time].at(i).node_vec_[j + 1].control_input_[input];
+					}
+					means_one_hor_step[input] = mean;
+					means_imp(input, j) = means_one_hor_step[input];
+				}
+			}
+
+			Expert_Instance.update_expert(1, means_imp);
+
+		}
+
 	}
 
 

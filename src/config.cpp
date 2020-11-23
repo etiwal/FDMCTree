@@ -8,18 +8,23 @@
 namespace config
 {
 	// Simulation
-	int sim_time = 150;
+	int sim_time = 200;
 
-	int rollouts = 20;
+	int rollouts = 100;
 	int horizon = 20;
 
 	// implementation
 	bool use_cum_cost = true;
 	bool use_last_best = true;
+	double pruning_threshold = 1;
+	bool use_imp_sampling = false;
+	bool use_cum_cost_for_imp_sampling = true;
+//	double target_speed_cost_factor = 1;
+
 
 	// collision grid
 	bool use_occupancy_grid = true;
-	const char *grid_path = "/home/etienne/git_clone/FDMCTree/grid_python/60x100/60x100_complicated.csv";
+	const char *grid_path = "/home/etienne/git_clone/FDMCTree/grid_python/60x100/60x100_complicated_3borders.csv";
 	size_t grid_height = 60;
 	size_t grid_width = 100;
 
@@ -29,7 +34,7 @@ namespace config
 	std::vector<double> initial_cov = {1, 1};
 
 	// - target
-	std::vector<double> target_state = {90, 40, 0, 0, 0, 0};
+	std::vector<double> target_state = {87, 38, 0, 0, 0, 0};
 
 	int obstacle_cost = 10000;
 
@@ -37,9 +42,9 @@ namespace config
 	std::vector<int> obstacle_pos = {5, 20, 55, 15, 40, 20, 80, 40};
 
 	std::vector<int> expert_types = {0, 1};
-	std::vector<int> expert_weights = {1, 1};
+	std::vector<int> expert_weights = {1, 4};
 
-	double pruning_threshold = 0.5;
+
 
 	// Robot
 	int state_dim = 6;

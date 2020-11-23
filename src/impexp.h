@@ -14,12 +14,11 @@ public:
 
 	Eigen::MatrixXd get_sample(size_t step, std::vector<double> state) override;
 
-	void update_expert();
+	void update_expert(Eigen::MatrixXd mean);
 
 protected:
 	GaussianSampler expert_sampler_one_;
 	std::map<size_t, GaussianSampler> experet_sampler_map_;
-
 };
 
 #endif //MCSAMPLING_IMPEXP_H

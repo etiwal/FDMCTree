@@ -5,7 +5,7 @@
 #ifndef MCSAMPLING_GAUSSIAN_SAMPLER_H
 #define MCSAMPLING_GAUSSIAN_SAMPLER_H
 
-#endif //MCSAMPLING_GAUSSIAN_SAMPLER_H
+
 
 /*!
  * @file     gaussian_sampler.h
@@ -143,3 +143,5 @@ private:
 
 	Eigen::SelfAdjointEigenSolver <Eigen::MatrixXd> solver_;
 };
+
+#endif //MCSAMPLING_GAUSSIAN_SAMPLER_H

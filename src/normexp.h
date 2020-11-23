@@ -6,6 +6,7 @@
 #define MCSAMPLING_NORMEXP_H
 
 #include "expertbase.h"
+//#include "trajects.h"
 
 class NormExp : public ExpertBase{
 public:
@@ -14,7 +15,7 @@ public:
 
 	Eigen::MatrixXd get_sample(size_t step, std::vector<double> state) override;
 
-	void update_expert();
+	void update_expert(Eigen::MatrixXd mean);
 
 protected:
 	GaussianSampler expert_sampler_one_;

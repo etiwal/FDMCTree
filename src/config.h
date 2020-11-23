@@ -19,6 +19,10 @@ namespace config {
 	// implementation
 	extern bool use_cum_cost;
 	extern bool use_last_best;
+	extern double pruning_threshold;
+	extern bool use_imp_sampling;
+	extern bool use_cum_cost_for_imp_sampling;
+//	extern double target_speed_cost_factor;
 
 	// collision grid
 	extern bool use_occupancy_grid;
@@ -41,7 +45,7 @@ namespace config {
 	extern std::vector<int> obstacle_rad;
 	extern std::vector<int> obstacle_pos;
 
-	extern double pruning_threshold;
+
 
 	// Robot
 	extern int state_dim;

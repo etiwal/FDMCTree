@@ -3,6 +3,7 @@
 //
 
 #ifndef MCSAMPLING_FUNCTIONS_H
+#define MCSAMPLING_FUNCTIONS_H
 
 
 #include <vector>
@@ -15,7 +16,6 @@
 
 #include "gaussian_sampler.h"
 #include "occupancygrid.h"
-
 
 
 double get_cost(std::vector<double> state);
@@ -31,5 +31,5 @@ void debug_print(size_t debug_lv, const boost::format& boost_str);
 size_t get_unique_node_id(size_t sim_time, size_t horizon_step, size_t rollout, bool init);
 
 
-#define MCSAMPLING_FUNCTIONS_H
+
 #endif //MCSAMPLING_FUNCTIONS_H

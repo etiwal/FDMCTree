@@ -5,7 +5,7 @@
 #ifndef MCSAMPLING_SYS_SIM_H
 #define MCSAMPLING_SYS_SIM_H
 
-#endif //MCSAMPLING_SYS_SIM_H
+
 
 #include <vector>
 #include "config.h"
@@ -28,3 +28,5 @@ public:
 
 	std::vector<double> sim_virtual_system(std::vector<double> state, std::vector<double> control_input, double timesteps);
 };
+
+#endif //MCSAMPLING_SYS_SIM_H

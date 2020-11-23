@@ -127,14 +127,12 @@ Eigen::MatrixXd Expert::get_sample(size_t expert_type, size_t step, const std::v
 	return experts_[expert_type]->get_sample(step, state);
 }
 
-void Expert::update_expert(size_t expert_type) {
-	experts_[expert_type]->update_expert();
+void Expert::update_expert(size_t expert_type, Eigen::MatrixXd mean){
+	experts_[expert_type]->update_expert(mean);
 }
 
 void Expert::update_experts() {
-	for (auto &&expert_ptr : experts_){
-		experts_[expert_ptr.first]->update_expert();
-	}
+	// do nothing
 }
 
 // correct way!
