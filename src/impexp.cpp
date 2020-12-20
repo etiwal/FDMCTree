@@ -5,9 +5,8 @@
 #include "impexp.h"
 
 ImpExp::ImpExp() : expert_sampler_one_(config::control_dim){
-	expert_sampler_one_.set_covariance(std::vector<double> {1,1});
+	expert_sampler_one_.set_covariance(std::vector<double> {2,2});
 	expert_sampler_one_.set_mean(std::vector<double> {0,0});
-
 
 	for (int i = 0; i < config::horizon; ++i) {
 		experet_sampler_map_[i] = expert_sampler_one_;

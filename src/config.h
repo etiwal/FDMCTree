@@ -10,6 +10,9 @@
 #include <string>
 
 namespace config {
+	// General
+	extern const char *note_filename;
+
 	// Simulation
 	extern int sim_time;
 

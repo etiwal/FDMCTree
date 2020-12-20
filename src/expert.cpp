@@ -23,7 +23,7 @@ GaussianSampler Expert::get_expert_sampler(const std::vector<double>& state, siz
 	switch (expert_type) {
 		// Gauss random
 		case 0:
-			expert_sampler.set_covariance(std::vector<double> {1,1});
+			expert_sampler.set_covariance(std::vector<double> {2,2});
 			expert_sampler.set_mean(std::vector<double> {0,0});
 
 			break;
@@ -31,28 +31,28 @@ GaussianSampler Expert::get_expert_sampler(const std::vector<double>& state, siz
 			expert_sampler.set_covariance(std::vector<double> {2,2});
 			expert_sampler.set_mean(std::vector<double> {0,0});
 			break;
-		case 2:
-			expert_sampler.set_covariance(std::vector<double> {10,10});
-			expert_sampler.set_mean(std::vector<double> {0,0});
-			break;
-			// Gauss and informed by previous
-		case 3:
-			static std::mt19937 gen{ std::random_device{}() };
-			static std::normal_distribution<double> ann;
-
-			expert_sampler.set_covariance(std::vector<double> {2,2});
-			expert_sampler.set_mean(std::vector<double> {ann(gen),ann(gen)});
-
-			expert_sampler.combine_dist_mult(sampler_parent);
-			break;
-		case 4:
-			expert_sampler.set_covariance(std::vector<double> {4,4});
-			expert_sampler.set_mean(std::vector<double> {0,0});
-
-			expert_sampler.combine_dist_mult(sampler_parent);
-			break;
+//		case 2:
+//			expert_sampler.set_covariance(std::vector<double> {10,10});
+//			expert_sampler.set_mean(std::vector<double> {0,0});
+//			break;
+//			// Gauss and informed by previous
+//		case 3:
+//			static std::mt19937 gen{ std::random_device{}() };
+//			static std::normal_distribution<double> ann;
+//
+//			expert_sampler.set_covariance(std::vector<double> {2,2});
+//			expert_sampler.set_mean(std::vector<double> {ann(gen),ann(gen)});
+//
+//			expert_sampler.combine_dist_mult(sampler_parent);
+//			break;
+//		case 4:
+//			expert_sampler.set_covariance(std::vector<double> {4,4});
+//			expert_sampler.set_mean(std::vector<double> {0,0});
+//
+//			expert_sampler.combine_dist_mult(sampler_parent);
+//			break;
 		default:
-			expert_sampler.set_covariance(std::vector<double> {1,1});
+			expert_sampler.set_covariance(std::vector<double> {2,2});
 			expert_sampler.set_mean(std::vector<double> {0,0});
 			break;
 	}

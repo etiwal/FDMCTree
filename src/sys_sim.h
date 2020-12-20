@@ -26,6 +26,8 @@ public:
 
 	std::vector<double> get_state();
 
+	double get_distance_to_target();
+
 	std::vector<double> sim_virtual_system(std::vector<double> state, std::vector<double> control_input, double timesteps);
 };
 

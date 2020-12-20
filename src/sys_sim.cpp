@@ -4,6 +4,7 @@
 
 #include "sys_sim.h"
 #include <vector>
+#include <cmath>
 
 // Sys
 Sys::Sys(std::vector<double> &init_state) {
@@ -43,4 +44,12 @@ std::vector<double> Sys::sim_virtual_system(std::vector<double> state, std::vect
 	double p_y = (a_y / 2 * timesteps * timesteps) + (state[3] * timesteps) + state[1];
 
 	return {p_x, p_y, v_x, v_y, a_x, a_y};
+}
+
+double Sys::get_distance_to_target() {
+	double distance = 0;
+	double dx = config::target_state[0] - state_[0];
+	double dy = config::target_state[1] - state_[1];
+	distance = std::sqrt(dx*dx + dy*dy);
+	return distance;
 }

@@ -19,12 +19,12 @@ bool OccupancyGrid::check_position(double x, double y) {
 	int y_min = std::floor(y);
 
 	bool occupied = false;
-	if (x<0 | x>100 | y < 0 | y > 60){
+	if (x<0 | x>config::grid_width | y < 0 | y > config::grid_height){
 		occupied = true;
-	} else if (grid_[config::grid_height-1-y_min][x_min]==0){
-		occupied = false;
+	} else if (grid_[config::grid_height-1-y_min][x_min]!=0){
+		occupied = true;
 	} else {
-		occupied = true;
+		occupied = false;
 	}
 
 	return occupied;

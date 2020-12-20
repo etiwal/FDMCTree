@@ -7,17 +7,21 @@
 
 namespace config
 {
+	// General
+	const char *note_filename = "mtc_";//"r20_h30_ccT_lbT_ps500_isT_et01_";
+
 	// Simulation
 	int sim_time = 200;
 
-	int rollouts = 100;
-	int horizon = 20;
+	int rollouts = 20;
+	int horizon = 30;
+
 
 	// implementation
 	bool use_cum_cost = true;
 	bool use_last_best = true;
-	double pruning_threshold = 1;
-	bool use_imp_sampling = false;
+	double pruning_threshold = 0.5; //1000
+	bool use_imp_sampling = true;
 	bool use_cum_cost_for_imp_sampling = true;
 //	double target_speed_cost_factor = 1;
 
@@ -42,7 +46,7 @@ namespace config
 	std::vector<int> obstacle_pos = {5, 20, 55, 15, 40, 20, 80, 40};
 
 	std::vector<int> expert_types = {0, 1};
-	std::vector<int> expert_weights = {1, 4};
+	std::vector<int> expert_weights = {1, 1};
 
 
 

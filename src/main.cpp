@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <boost/format.hpp>
+#include <fstream>
 
 #include "functions.h"
 #include "../lib/tree.h"
@@ -17,23 +18,18 @@
 int main(){
 	// Init Logging
 	Logger config_log { "config_log.txt" };
-	config_log.write("sim_time", "rollouts", "horizon", "obstacle_cost", "use_occupancy_grid", "grid_path", "obstacle_rad_0", "obstacle_rad_1", "obstacle_rad_2","obstacle_rad_3", "obstacle_pos_0_x","obstacle_pos_0_y", "obstacle_pos_1_x","obstacle_pos_1_y", "obstacle_pos_2_x","obstacle_pos_2_y", "obstacle_pos_3_x","obstacle_pos_3_y", "start_state_0", "start_state_1","target_state_0", "target_state_1");
+	config_log.write("sim_time", "rollouts", "horizon", "obstacle_cost", "use_occupancy_grid", "grid_path", "start_state_0", "start_state_1","target_state_0", "target_state_1", "use_cum_cost", "use_last_best", "pruning_threshold", "use_imp_sampling", "use_cum_cost_for_imp_sampling", "note_filename");
 	config_log.write_endl();
-	config_log.write(config::sim_time, config::rollouts, config::horizon, config::obstacle_cost, config::use_occupancy_grid, config::grid_path, config::obstacle_rad[0],config::obstacle_rad[1],config::obstacle_rad[2],config::obstacle_rad[3], config::obstacle_pos[0],config::obstacle_pos[1],config::obstacle_pos[2],config::obstacle_pos[3],config::obstacle_pos[4],config::obstacle_pos[5],config::obstacle_pos[6],config::obstacle_pos[7],config::initial_state[0], config::initial_state[1], config::target_state[0],config::target_state[1]);
+	config_log.write(config::sim_time, config::rollouts, config::horizon, config::obstacle_cost, config::use_occupancy_grid, config::grid_path, config::initial_state[0], config::initial_state[1], config::target_state[0],config::target_state[1], config::use_cum_cost, config::use_last_best, config::pruning_threshold, config::use_imp_sampling, config::use_cum_cost_for_imp_sampling, config::note_filename);
 	config_log.write_endl();
 
 	Logger sim_log { "sim_log.txt" };
-	sim_log.write("simstep", "state_0", "state_1", "state_2", "state_3", "state_4", "state_5");
+	sim_log.write("simstep", "state_0", "state_1", "state_2", "state_3", "state_4", "state_5", "distance_to_target");
 	sim_log.write_endl();
 
 	Logger sampling_log { "sampling_log.txt" };
 	sampling_log.write("node_id", "simstep", "step","rollout","state_0", "state_1", "state_2", "state_3", "state_4", "state_5", "cost_cum", "path_to_leaf");
 	sampling_log.write_endl();
-
-	//YAML::Node ConfigNode = YAML::LoadFile("./config.yaml");
-
-    int horizon = config::horizon;//ConfigNode["solver"]["horizon"].as<int>();
-    int n_rollouts = config::rollouts;//ConfigNode["solver"]["rollouts"].as<int>();
 
 	std::vector<double> initial_state = config::initial_state;
 
@@ -52,7 +48,7 @@ int main(){
 		// init tree and root
 
 		if (time==0){
-			sim_log.write(time, Robot.get_state()[0], Robot.get_state()[1], Robot.get_state()[2], Robot.get_state()[3], Robot.get_state()[4], Robot.get_state()[5]);
+			sim_log.write(time, Robot.get_state()[0], Robot.get_state()[1], Robot.get_state()[2], Robot.get_state()[3], Robot.get_state()[4], Robot.get_state()[5], Robot.get_distance_to_target());
 			sim_log.write_endl();
 		}
 
@@ -71,9 +67,9 @@ int main(){
 
 		std::cout << std::endl;
 		debug_print(2, boost::format("initializing nodes and an array with leaf iterator objects"));
-		std::vector<tree<Node>::iterator> leaf_handles(n_rollouts);
+		std::vector<tree<Node>::iterator> leaf_handles(config::rollouts);
 
-		for (int rollout = 0; rollout < n_rollouts; ++rollout) {
+		for (int rollout = 0; rollout < config::rollouts; ++rollout) {
 			if (config::use_last_best == true && rollout == 0 && time != 0){
 				auto best_prev_traj_cut = trajectories.get_best_traject_cut(time-1);
 				auto best_prev_traj_node_current = best_prev_traj_cut.node_vec_[0];
@@ -88,7 +84,7 @@ int main(){
 			}
 		}
 
-		for (int step = 0; step < horizon; ++step) {
+		for (int step = 0; step < config::horizon; ++step) {
 			debug_print(2, boost::format("time-step: %1%") % step);
 			debug_print(2, boost::format("Define Set of leaf handles which will be extended"));
 			debug_print(2, boost::format(""));
@@ -97,7 +93,7 @@ int main(){
 
 			// get the min cost of the leafs
 			double min_cost = std::numeric_limits<double>::max();;
-			for (int rollout = 0; rollout < n_rollouts; ++rollout) {
+			for (int rollout = 0; rollout < config::rollouts; ++rollout) {
 				auto active_rollout = leaf_handles[rollout];
 				if (active_rollout->cost_cum_ < min_cost) {
 					min_cost = active_rollout->cost_cum_;
@@ -107,27 +103,31 @@ int main(){
 //			std::cout << "current min cost is " << min_cost << std::endl;
 
 			// construct a set of extandable leafs
-			for (int rollout = 0; rollout < n_rollouts; ++rollout) {
+			for (int rollout = 0; rollout < config::rollouts; ++rollout) {
 				auto active_rollout = leaf_handles[rollout];
 //				std::cout << "cost of active rollout is " << active_rollout->cost_ << std::endl;
-				if (config::use_last_best == true && rollout == 0 && time != 0 && step < horizon-1){
+				if (config::use_last_best == true && rollout == 0 && time != 0 && step < config::horizon-1){
 					leaf_handles_extending.push_back(active_rollout);
 				}
 				// TODO: could be set to 2 times the cost of the value from last iterations best trajectory (implementation in paper)
+				else if(config::pruning_threshold >= 1000) {
+					// extend everything
+					leaf_handles_extending.push_back(active_rollout);
+				}
 				else if(active_rollout->cost_cum_ <= min_cost + (config::pruning_threshold * min_cost)) {
 					leaf_handles_extending.push_back(active_rollout);
 				}
-//			else {
-//				std::cout << "rollout " << rollout << " has been cut" << std::endl;
-//			};
+				else {
+					//std::cout << "rollout " << rollout << " has been cut" << std::endl;
+				};
 			}
 
 			debug_print(2, boost::format("currently we have n extendable leafs: %1%") % leaf_handles_extending.size());
 
-			for (int rollout = 0; rollout < n_rollouts; ++rollout) {
+			for (int rollout = 0; rollout < config::rollouts; ++rollout) {
 				auto active_rollout = leaf_handles[rollout];
 
-				if (config::use_last_best == true && rollout == 0 && time != 0 && step < horizon-1){
+				if (config::use_last_best == true && rollout == 0 && time != 0 && step < config::horizon-1){
 					debug_print(2, boost::format("previous best will be directly extended"));
 
 					auto best_prev_traj_cut = trajectories.get_best_traject_cut(time-1);
@@ -151,7 +151,7 @@ int main(){
 //					active_rollout->sample_control_input(active_rollout->state_, active_rollout->expert_type_);
 					std::vector<double> control_input(2);
 					//auto sampled_control_input = active_rollout->sampler_.get_sample();
-					auto sampled_control_input = Expert_Instance.get_sample(active_rollout->expert_type_, active_rollout->rollout_, active_rollout->state_);
+					auto sampled_control_input = Expert_Instance.get_sample(active_rollout->expert_type_, active_rollout->step_, active_rollout->state_);
 					control_input[0] = sampled_control_input(0,0);
 					control_input[1] = sampled_control_input(1,0);
 
@@ -171,7 +171,7 @@ int main(){
 //					active_rollout->sample_control_input(extending_leaf->state_, active_rollout->expert_type_);
 					std::vector<double> control_input(2);
 					//auto sampled_control_input = active_rollout->sampler_.get_sample();
-					auto sampled_control_input = Expert_Instance.get_sample(active_rollout->expert_type_, active_rollout->rollout_, active_rollout->state_);
+					auto sampled_control_input = Expert_Instance.get_sample(active_rollout->expert_type_, active_rollout->step_, active_rollout->state_);
 					control_input[0] = sampled_control_input(0,0);
 					control_input[1] = sampled_control_input(1,0);
 
@@ -285,7 +285,7 @@ int main(){
 		// print result of applied input
 		std::cout << "Robot moved to position (" << Robot.get_state()[0] << ", " << Robot.get_state()[1] << "), Target was: (" << config::target_state[0] << ", " << config::target_state[1] << ")" << std::endl;
 
-		sim_log.write(time+1, Robot.get_state()[0], Robot.get_state()[1], Robot.get_state()[2], Robot.get_state()[3], Robot.get_state()[4], Robot.get_state()[5]);
+		sim_log.write(time+1, Robot.get_state()[0], Robot.get_state()[1], Robot.get_state()[2], Robot.get_state()[3], Robot.get_state()[4], Robot.get_state()[5], Robot.get_distance_to_target());
 		sim_log.write_endl();
 
 		if (config::use_imp_sampling) {
@@ -317,14 +317,45 @@ int main(){
 					means_imp(input, j) = means_one_hor_step[input];
 				}
 			}
-
+//			std::cout << means_imp << std::endl;
 			Expert_Instance.update_expert(1, means_imp);
 
 		}
 
 	}
 
+	config_log.~Logger();
+	sim_log.~Logger();
+	sampling_log.~Logger();
 
+	bool copy_logs = false;
+	if (copy_logs){
+		std::time_t current_time = std::time(nullptr);
+
+		std::string experiment_initializer = "../logging/B/080/";
+		std::string new_filename_base = experiment_initializer.append(config::note_filename);
+		new_filename_base = new_filename_base.append(std::to_string(current_time));
+
+		std::vector<std::string> files_to_copy = {"config_log.txt", "sim_log.txt", "sampling_log.txt"};
+
+		for (auto filename_orig : files_to_copy) {
+
+			std::ifstream src(filename_orig, std::ifstream::in);
+			assert(src.is_open());
+
+			auto filename = new_filename_base;
+			filename = filename.append("_");
+			filename = filename.append(config::note_filename);
+			filename = filename.append(filename_orig);
+			std::ofstream dst(filename, std::ofstream::out);
+
+			assert(dst.is_open());
+			dst << src.rdbuf();
+
+			src.close();
+			dst.close();
+		}
+	}
 
 	return 0;
 }
