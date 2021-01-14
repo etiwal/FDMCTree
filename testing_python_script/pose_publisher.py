@@ -36,10 +36,10 @@ class Talker():
 		self.rate = rospy.Rate(10) 		
 
 	def publish(self, msg, time_s):
-		time_init_publisher = time.time()
+		time_init_publisher = rospy.Time.now()
 		msg.header.frame_id = "world"		
 
-		while (not rospy.is_shutdown()) & (time.time() < time_init_publisher+time_s):
+		while (not rospy.is_shutdown()) & (rospy.Time.now() < time_init_publisher+rospy.Duration(time_s)):
 
 			msg.header.stamp = rospy.Time.now()
 
@@ -60,7 +60,7 @@ def main(argv):
 
 		obst_msg = create_msg(obstacle_position_df.iloc[idx,:-1].values.tolist())
 		try:	
-			obst_publisher.publish(obst_msg, 2)	
+			obst_publisher.publish(obst_msg, int(obstacle_position_df['duration'].iloc[-1]))	
 		except rospy.ROSInterruptException:
 			print("some error occured!")
 
@@ -74,7 +74,7 @@ def main(argv):
 
 			ee_msg = create_msg(ee_position_df.iloc[idx,:-1].values.tolist())
 			try:
-				ee_publisher.publish(ee_msg, int(ee_position_df['duration'].iloc[-1]))	  
+				ee_publisher.publish(ee_msg, int(ee_position_df['duration'].iloc[idx]))	  
 			except rospy.ROSInterruptException:
 				print("some error occured!")
 
